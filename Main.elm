@@ -6,36 +6,20 @@ import Html.Attributes
 import Svg exposing (Svg)
 import Svg.Attributes exposing (..)
 import Svg.Events exposing (onClick)
-
-
-type alias Coordinate =
-    ( Int, Int )
-
-
-type alias Position =
-    { coordinate : Coordinate
-    , occupant : Occupant
-    }
+import Board
+import Player
+import Coordinate exposing (Coordinate)
 
 
 type Occupant
     = Empty
-    | Ring Player
-    | Marker Player
-
-
-type Player
-    = White
-    | Black
-
-
-type alias Board =
-    Dict Coordinate Occupant
+    | Ring Player.Model
+    | Marker Player.Model
 
 
 type alias Model =
-    { board : Board
-    , currentPlayer : Player
+    { board : Board.Model Occupant
+    , currentPlayer : Player.Model
     }
 
 
@@ -44,22 +28,17 @@ type Msg
     | PlaceRing Coordinate
 
 
-{-| Directions in which one may traverse
--}
-type Direction
-    = Up
-    | Down
-    | Left
-    | Right
-    | In
-    | Out
+radius : Float
+radius =
+    4.6
 
 
+main : Program Never Model Msg
 main =
     Html.program
         { init = init
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = always Sub.none
         , view = view
         }
 
@@ -68,7 +47,6 @@ view : Model -> Html Msg
 view model =
     model.board
         |> Dict.toList
-        |> List.map (\( coord, occupant ) -> { coordinate = coord, occupant = occupant })
         |> List.map viewPosition
         |> Svg.svg
             [ viewBox "-10 -10 20 20"
@@ -76,11 +54,11 @@ view model =
             , width "100vw"
             , fontSize "5%"
             ]
-        |> (\svg -> Html.body [ Html.Attributes.style [ ( "background-color", "lightblue" ) ] ] [ svg ])
+        |> (\svg -> Html.main_ [ Html.Attributes.style [ ( "background-color", "lightblue" ) ] ] [ svg ])
 
 
-viewPosition : Position -> Svg Msg
-viewPosition { coordinate, occupant } =
+viewPosition : ( Coordinate, Occupant ) -> Svg Msg
+viewPosition ( coordinate, occupant ) =
     let
         ( x_, y_ ) =
             toCartesian 2 coordinate
@@ -92,7 +70,7 @@ viewPosition { coordinate, occupant } =
     in
         Svg.g
             [ onClick (PlaceRing coordinate) ]
-            [ Svg.circle [ cx xString, cy yString, r "5%", fill "none", pointerEvents "all" ] []
+            [ Svg.circle [ cx xString, cy yString, r "3%", fill "none", pointerEvents "all" ] []
             , viewLines x_ y_
             , viewOccupant occupant xString yString
             ]
@@ -129,27 +107,17 @@ viewCoordinate coordinate =
     Svg.text (toString coordinate)
 
 
-playerColor : Player -> String
-playerColor player =
-    case player of
-        White ->
-            "white"
-
-        Black ->
-            "black"
-
-
 viewOccupant : Occupant -> String -> String -> Svg Msg
 viewOccupant occupant cx_ cy_ =
     case occupant of
         Ring player ->
             Svg.circle
-                [ cx cx_, cy cy_, r "4%", fill "none", stroke (playerColor player), strokeWidth "1%" ]
+                [ cx cx_, cy cy_, r "4%", fill "none", stroke (Player.view player), strokeWidth "1%" ]
                 []
 
         Marker player ->
             Svg.circle
-                [ cx cx_, cy cy_, r "2%", fill (playerColor player) ]
+                [ cx cx_, cy cy_, r "2%", fill (Player.view player) ]
                 []
 
         Empty ->
@@ -172,34 +140,12 @@ toCartesian scale coordinate =
             |> Tuple.mapSecond ((*) scale)
 
 
-radius : Float
-radius =
-    4.6
-
-
 init : ( Model, Cmd Msg )
 init =
-    { board = initBoard
-    , currentPlayer = White
+    { board = Board.init radius Empty
+    , currentPlayer = Player.init
     }
         ! []
-
-
-initBoard : Board
-initBoard =
-    squareOf (ceiling radius)
-        |> List.filter valid
-        |> List.map (\e -> ( e, Empty ))
-        |> Dict.fromList
-
-
-squareOf : Int -> List Coordinate
-squareOf radius =
-    let
-        range =
-            List.range (negate radius) radius
-    in
-        List.concatMap (\x -> List.map (\y -> ( x, y )) range) range
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -207,74 +153,10 @@ update msg model =
     case msg of
         PlaceRing coordinate ->
             { model
-                | board = Dict.insert coordinate (Ring model.currentPlayer) model.board
-                , currentPlayer = nextPlayer model.currentPlayer
+                | board = Board.update coordinate (Ring model.currentPlayer) model.board
+                , currentPlayer = Player.update model.currentPlayer
             }
                 ! []
 
         NoOp ->
             model ! []
-
-
-nextPlayer : Player -> Player
-nextPlayer player =
-    case player of
-        White ->
-            Black
-
-        Black ->
-            White
-
-
-square : number -> number
-square n =
-    n * n
-
-
-valid : Coordinate -> Bool
-valid ( x, y ) =
-    let
-        x_ =
-            toFloat x
-
-        y_ =
-            toFloat y
-    in
-        (square radius) >= (square ((sqrt 3) / 2 * x_)) + (square ((x_ / 2) - y_))
-
-
-add : Direction -> Coordinate -> Coordinate
-add direction ( x, y ) =
-    let
-        vec =
-            vector direction
-
-        dx =
-            Tuple.first vec
-
-        dy =
-            Tuple.second vec
-    in
-        ( x + dx, y + dy )
-
-
-vector : Direction -> Coordinate
-vector direction =
-    case direction of
-        Up ->
-            ( 0, 1 )
-
-        Down ->
-            ( 0, -1 )
-
-        Left ->
-            ( -1, 0 )
-
-        Right ->
-            ( 1, 0 )
-
-        In ->
-            ( 1, 1 )
-
-        Out ->
-            ( -1, -1 )
