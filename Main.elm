@@ -1,9 +1,11 @@
 module Main exposing (..)
 
+import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes
 import Svg exposing (Svg)
 import Svg.Attributes exposing (..)
+import Svg.Events exposing (onClick)
 
 
 type alias Coordinate =
@@ -28,15 +30,18 @@ type Player
 
 
 type alias Board =
-    List Position
+    Dict Coordinate Occupant
 
 
 type alias Model =
-    { board : Board }
+    { board : Board
+    , currentPlayer : Player
+    }
 
 
 type Msg
     = NoOp
+    | PlaceRing Coordinate
 
 
 {-| Directions in which one may traverse
@@ -53,7 +58,7 @@ type Direction
 main =
     Html.program
         { init = init
-        , update = (\msg model -> model ! [])
+        , update = update
         , subscriptions = \_ -> Sub.none
         , view = view
         }
@@ -62,6 +67,8 @@ main =
 view : Model -> Html Msg
 view model =
     model.board
+        |> Dict.toList
+        |> List.map (\( coord, occupant ) -> { coordinate = coord, occupant = occupant })
         |> List.map viewPosition
         |> Svg.svg
             [ viewBox "-10 -10 20 20"
@@ -84,8 +91,9 @@ viewPosition { coordinate, occupant } =
                 |> Tuple.mapSecond toString
     in
         Svg.g
-            []
-            [ viewLines x_ y_
+            [ onClick (PlaceRing coordinate) ]
+            [ Svg.circle [ cx xString, cy yString, r "5%", fill "none", pointerEvents "all" ] []
+            , viewLines x_ y_
             , viewOccupant occupant xString yString
             ]
 
@@ -171,14 +179,18 @@ radius =
 
 init : ( Model, Cmd Msg )
 init =
-    { board = initBoard } ! []
+    { board = initBoard
+    , currentPlayer = White
+    }
+        ! []
 
 
 initBoard : Board
 initBoard =
     squareOf (ceiling radius)
         |> List.filter valid
-        |> List.map (\e -> { coordinate = e, occupant = Empty })
+        |> List.map (\e -> ( e, Empty ))
+        |> Dict.fromList
 
 
 squareOf : Int -> List Coordinate
@@ -188,6 +200,30 @@ squareOf radius =
             List.range (negate radius) radius
     in
         List.concatMap (\x -> List.map (\y -> ( x, y )) range) range
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        PlaceRing coordinate ->
+            { model
+                | board = Dict.insert coordinate (Ring model.currentPlayer) model.board
+                , currentPlayer = nextPlayer model.currentPlayer
+            }
+                ! []
+
+        NoOp ->
+            model ! []
+
+
+nextPlayer : Player -> Player
+nextPlayer player =
+    case player of
+        White ->
+            Black
+
+        Black ->
+            White
 
 
 square : number -> number
