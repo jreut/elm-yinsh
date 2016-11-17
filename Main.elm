@@ -7,8 +7,25 @@ type alias Coordinate =
     ( Int, Int )
 
 
+type alias Position =
+    { coordinate : Coordinate
+    , occupant : Occupant
+    }
+
+
+type Occupant
+    = Empty
+    | Ring Player
+    | Marker Player
+
+
+type Player
+    = White
+    | Black
+
+
 type alias Board =
-    List Coordinate
+    List Position
 
 
 {-| Directions in which one may traverse
@@ -39,6 +56,7 @@ init =
         range
             |> List.concatMap (\x -> range |> List.map (\y -> ( x, y )))
             |> List.filter valid
+            |> List.map (\e -> { coordinate = e, occupant = Empty })
 
 
 square : number -> number
