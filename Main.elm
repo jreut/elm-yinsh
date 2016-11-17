@@ -1,6 +1,9 @@
 module Main exposing (..)
 
-import Html
+import Html exposing (Html)
+import Html.Attributes
+import Svg exposing (Svg)
+import Svg.Attributes exposing (..)
 
 
 type alias Coordinate =
@@ -28,6 +31,14 @@ type alias Board =
     List Position
 
 
+type alias Model =
+    { board : Board }
+
+
+type Msg
+    = NoOp
+
+
 {-| Directions in which one may traverse
 -}
 type Direction
@@ -39,13 +50,82 @@ type Direction
     | Out
 
 
+main =
+    Html.program
+        { init = init
+        , update = (\msg model -> model ! [])
+        , subscriptions = \_ -> Sub.none
+        , view = view
+        }
+
+
+view : Model -> Html Msg
+view model =
+    model.board
+        |> List.map viewPosition
+        |> Svg.svg
+            [ viewBox "-10 -10 20 20"
+            , height "100vh"
+            , width "100vw"
+            , fontSize "5%"
+            ]
+
+
+viewPosition : Position -> Svg Msg
+viewPosition position =
+    let
+        x_ =
+            Tuple.first position.coordinate |> toFloat |> (*) 2
+
+        y_ =
+            Tuple.second position.coordinate |> toFloat |> (*) 2
+
+        x__ =
+            (sqrt 3) / 2 * x_
+
+        y__ =
+            (x_ / 2) - y_
+
+        xString =
+            toString x__
+
+        yString =
+            toString y__
+    in
+        Svg.g
+            []
+            [ Svg.circle
+                [ cx xString
+                , cy yString
+                , r "1%"
+                , fill "none"
+                , stroke "lightgrey"
+                , strokeWidth "0.5%"
+                ]
+                []
+            , Svg.text_
+                [ x xString
+                , y yString
+                , fontStyle "italic"
+                , textAnchor "middle"
+                , alignmentBaseline "auto"
+                ]
+                [ Svg.text (toString position.coordinate) ]
+            ]
+
+
 radius : Float
 radius =
     4.6
 
 
-init : Board
+init : ( Model, Cmd Msg )
 init =
+    { board = initBoard } ! []
+
+
+initBoard : Board
+initBoard =
     let
         roundedRadius =
             ceiling radius
