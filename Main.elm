@@ -85,14 +85,34 @@ viewPosition { coordinate, occupant } =
     in
         Svg.g
             []
-            [ Svg.circle
-                [ cx xString
-                , cy yString
-                , r "1%"
-                , fill "whitesmoke"
-                ]
-                []
+            [ viewLines x_ y_
             , viewOccupant occupant xString yString
+            ]
+
+
+viewLines : Float -> Float -> Svg Msg
+viewLines x y =
+    let
+        line =
+            \x_ y_ ->
+                Svg.line
+                    [ x1 (toString x)
+                    , y1 (toString y)
+                    , x2 (toString (x + x_))
+                    , y2 (toString (y + y_))
+                    , stroke "black"
+                    , strokeWidth "0.3%"
+                    ]
+                    []
+    in
+        Svg.g
+            []
+            [ line 0 1
+            , line 0 -1
+            , line ((sqrt 3) / 2) (1 / 2)
+            , line ((sqrt 3) / 2) (-1 / 2)
+            , line ((sqrt 3) / -2) (-1 / 2)
+            , line ((sqrt 3) / -2) (1 / 2)
             ]
 
 
