@@ -102,11 +102,6 @@ viewLines x y =
             ]
 
 
-viewCoordinate : Coordinate -> Svg Msg
-viewCoordinate coordinate =
-    Svg.text (toString coordinate)
-
-
 viewOccupant : Occupant -> String -> String -> Svg Msg
 viewOccupant occupant cx_ cy_ =
     case occupant of
