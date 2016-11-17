@@ -69,28 +69,19 @@ view model =
             , width "100vw"
             , fontSize "5%"
             ]
+        |> (\svg -> Html.body [ Html.Attributes.style [ ( "background-color", "lightblue" ) ] ] [ svg ])
 
 
 viewPosition : Position -> Svg Msg
-viewPosition position =
+viewPosition { coordinate, occupant } =
     let
-        x_ =
-            Tuple.first position.coordinate |> toFloat |> (*) 2
+        ( x_, y_ ) =
+            toCartesian 2 coordinate
 
-        y_ =
-            Tuple.second position.coordinate |> toFloat |> (*) 2
-
-        x__ =
-            (sqrt 3) / 2 * x_
-
-        y__ =
-            (x_ / 2) - y_
-
-        xString =
-            toString x__
-
-        yString =
-            toString y__
+        ( xString, yString ) =
+            toCartesian 2 coordinate
+                |> Tuple.mapFirst toString
+                |> Tuple.mapSecond toString
     in
         Svg.g
             []
@@ -98,20 +89,59 @@ viewPosition position =
                 [ cx xString
                 , cy yString
                 , r "1%"
-                , fill "none"
-                , stroke "lightgrey"
-                , strokeWidth "0.5%"
+                , fill "whitesmoke"
                 ]
                 []
-            , Svg.text_
-                [ x xString
-                , y yString
-                , fontStyle "italic"
-                , textAnchor "middle"
-                , alignmentBaseline "auto"
-                ]
-                [ Svg.text (toString position.coordinate) ]
+            , viewOccupant occupant xString yString
             ]
+
+
+viewCoordinate : Coordinate -> Svg Msg
+viewCoordinate coordinate =
+    Svg.text (toString coordinate)
+
+
+playerColor : Player -> String
+playerColor player =
+    case player of
+        White ->
+            "white"
+
+        Black ->
+            "black"
+
+
+viewOccupant : Occupant -> String -> String -> Svg Msg
+viewOccupant occupant cx_ cy_ =
+    case occupant of
+        Ring player ->
+            Svg.circle
+                [ cx cx_, cy cy_, r "4%", fill "none", stroke (playerColor player), strokeWidth "1%" ]
+                []
+
+        Marker player ->
+            Svg.circle
+                [ cx cx_, cy cy_, r "2%", fill (playerColor player) ]
+                []
+
+        Empty ->
+            Svg.circle
+                [ cx cx_, cy cy_, r "0", fill "none" ]
+                []
+
+
+toCartesian : Float -> Coordinate -> ( Float, Float )
+toCartesian scale coordinate =
+    let
+        x =
+            Tuple.first coordinate |> toFloat
+
+        y =
+            Tuple.second coordinate |> toFloat
+    in
+        ( (sqrt 3) / 2 * x, (x / 2) - y )
+            |> Tuple.mapFirst ((*) scale)
+            |> Tuple.mapSecond ((*) scale)
 
 
 radius : Float
@@ -126,17 +156,18 @@ init =
 
 initBoard : Board
 initBoard =
-    let
-        roundedRadius =
-            ceiling radius
+    squareOf (ceiling radius)
+        |> List.filter valid
+        |> List.map (\e -> { coordinate = e, occupant = Empty })
 
+
+squareOf : Int -> List Coordinate
+squareOf radius =
+    let
         range =
-            List.range (negate roundedRadius) roundedRadius
+            List.range (negate radius) radius
     in
-        range
-            |> List.concatMap (\x -> range |> List.map (\y -> ( x, y )))
-            |> List.filter valid
-            |> List.map (\e -> { coordinate = e, occupant = Empty })
+        List.concatMap (\x -> List.map (\y -> ( x, y )) range) range
 
 
 square : number -> number
