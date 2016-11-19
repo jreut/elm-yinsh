@@ -9,6 +9,74 @@ import Svg.Events exposing (onClick)
 import Board
 import Player
 import Coordinate exposing (Coordinate)
+import BoardView
+
+
+type alias Position =
+    ( Coordinate, Occupant )
+
+
+toCoordinate : Position -> BoardView.Coordinate
+toCoordinate ( coordinate, occupant ) =
+    let
+        ( x, y ) =
+            coordinate |> Tuple.mapFirst toFloat |> Tuple.mapSecond toFloat
+
+        scale =
+            2
+    in
+        ( (sqrt 3) / 2 * x, (x / 2) - y )
+            |> Tuple.mapFirst ((*) scale)
+            |> Tuple.mapSecond ((*) scale)
+
+
+toMsg : BoardView.State -> Position -> Msg
+toMsg state ( coordinate, occupant ) =
+    case ( coordinate, occupant ) of
+        ( c, Empty ) ->
+            PlaceRing coordinate
+
+        ( _, _ ) ->
+            NoOp
+
+
+toSvg : Position -> Svg Msg
+toSvg position =
+    let
+        ( x, y ) =
+            toCoordinate position
+                |> Tuple.mapFirst toString
+                |> Tuple.mapSecond toString
+
+        occupant =
+            Tuple.second position
+
+        circle =
+            \r_ attrs ->
+                Svg.circle
+                    ([ cx x, cy y, r r_ ] ++ attrs)
+                    []
+    in
+        case occupant of
+            Ring player ->
+                circle "4%"
+                    [ fill "none", stroke (Player.view player), strokeWidth "1%" ]
+
+            Marker player ->
+                circle "2%"
+                    [ fill (Player.view player) ]
+
+            Empty ->
+                circle "0"
+                    [ fill "none" ]
+
+
+boardConfig : BoardView.Config Position Msg
+boardConfig =
+    { toCoordinate = toCoordinate
+    , toMsg = toMsg
+    , toSvg = toSvg
+    }
 
 
 type Occupant
@@ -45,94 +113,14 @@ main =
 
 view : Model -> Html Msg
 view model =
-    model.board
-        |> Dict.toList
-        |> List.map viewPosition
-        |> Svg.svg
-            [ viewBox "-10 -10 20 20"
-            , height "100vh"
-            , width "100vw"
-            , fontSize "5%"
-            ]
-        |> (\svg -> Html.main_ [ Html.Attributes.style [ ( "background-color", "lightblue" ) ] ] [ svg ])
-
-
-viewPosition : ( Coordinate, Occupant ) -> Svg Msg
-viewPosition ( coordinate, occupant ) =
     let
-        ( x_, y_ ) =
-            toCartesian 2 coordinate
+        data =
+            model.board |> Dict.toList
 
-        ( xString, yString ) =
-            toCartesian 2 coordinate
-                |> Tuple.mapFirst toString
-                |> Tuple.mapSecond toString
+        svg =
+            BoardView.view boardConfig () data
     in
-        Svg.g
-            [ onClick (PlaceRing coordinate) ]
-            [ Svg.circle [ cx xString, cy yString, r "3%", fill "none", pointerEvents "all" ] []
-            , viewLines x_ y_
-            , viewOccupant occupant xString yString
-            ]
-
-
-viewLines : Float -> Float -> Svg Msg
-viewLines x y =
-    let
-        line =
-            \x_ y_ ->
-                Svg.line
-                    [ x1 (toString x)
-                    , y1 (toString y)
-                    , x2 (toString (x + x_))
-                    , y2 (toString (y + y_))
-                    , stroke "black"
-                    , strokeWidth "0.3%"
-                    ]
-                    []
-    in
-        Svg.g
-            []
-            [ line 0 1
-            , line 0 -1
-            , line ((sqrt 3) / 2) (1 / 2)
-            , line ((sqrt 3) / 2) (-1 / 2)
-            , line ((sqrt 3) / -2) (-1 / 2)
-            , line ((sqrt 3) / -2) (1 / 2)
-            ]
-
-
-viewOccupant : Occupant -> String -> String -> Svg Msg
-viewOccupant occupant cx_ cy_ =
-    case occupant of
-        Ring player ->
-            Svg.circle
-                [ cx cx_, cy cy_, r "4%", fill "none", stroke (Player.view player), strokeWidth "1%" ]
-                []
-
-        Marker player ->
-            Svg.circle
-                [ cx cx_, cy cy_, r "2%", fill (Player.view player) ]
-                []
-
-        Empty ->
-            Svg.circle
-                [ cx cx_, cy cy_, r "0", fill "none" ]
-                []
-
-
-toCartesian : Float -> Coordinate -> ( Float, Float )
-toCartesian scale coordinate =
-    let
-        x =
-            Tuple.first coordinate |> toFloat
-
-        y =
-            Tuple.second coordinate |> toFloat
-    in
-        ( (sqrt 3) / 2 * x, (x / 2) - y )
-            |> Tuple.mapFirst ((*) scale)
-            |> Tuple.mapSecond ((*) scale)
+        Html.main_ [ Html.Attributes.style [ ( "background-color", "lightblue" ) ] ] [ svg ]
 
 
 init : ( Model, Cmd Msg )
