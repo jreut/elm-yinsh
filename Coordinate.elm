@@ -3,6 +3,7 @@ module Coordinate
         ( Coordinate
         , validWithin
         , squareOf
+        , toCartesian
         )
 
 
@@ -29,6 +30,17 @@ validWithin radius ( x, y ) =
             toFloat y
     in
         (radius ^ 2) >= (((sqrt 3) / 2 * x_) ^ 2) + (((x_ / 2) - y_) ^ 2)
+
+
+toCartesian : Float -> Coordinate -> ( Float, Float )
+toCartesian scale coordinate =
+    let
+        ( x, y ) =
+            coordinate |> Tuple.mapFirst toFloat |> Tuple.mapSecond toFloat
+    in
+        ( (sqrt 3) / 2 * x, (x / 2) - y )
+            |> Tuple.mapFirst ((*) scale)
+            |> Tuple.mapSecond ((*) scale)
 
 
 

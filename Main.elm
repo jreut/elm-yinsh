@@ -17,17 +17,8 @@ type alias Position =
 
 
 toCoordinate : Position -> BoardView.Coordinate
-toCoordinate ( coordinate, occupant ) =
-    let
-        ( x, y ) =
-            coordinate |> Tuple.mapFirst toFloat |> Tuple.mapSecond toFloat
-
-        scale =
-            2
-    in
-        ( (sqrt 3) / 2 * x, (x / 2) - y )
-            |> Tuple.mapFirst ((*) scale)
-            |> Tuple.mapSecond ((*) scale)
+toCoordinate ( coordinate, _ ) =
+    Coordinate.toCartesian 2 coordinate
 
 
 toMsg : BoardView.State -> Position -> Msg
