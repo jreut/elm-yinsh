@@ -1,9 +1,10 @@
-module Coordinate
+module Coordinate.Hexagonal
     exposing
         ( Coordinate
         , validWithin
         , squareOf
         , toCartesian
+        , toString
         )
 
 
@@ -21,26 +22,50 @@ squareOf radius =
 
 
 validWithin : Float -> Coordinate -> Bool
-validWithin radius ( x, y ) =
-    let
-        x_ =
-            toFloat x
+validWithin radius coordinate =
+    radius ^ 2 >= norm coordinate origin
 
-        y_ =
-            toFloat y
+
+norm : Coordinate -> Coordinate -> Float
+norm origin dest =
+    let
+        ( x, y ) =
+            toCartesian 1 origin
+
+        ( x_, y_ ) =
+            toCartesian 1 dest
     in
-        (radius ^ 2) >= (((sqrt 3) / 2 * x_) ^ 2) + (((x_ / 2) - y_) ^ 2)
+        (x - x_) ^ 2 + (y - y_) ^ 2
 
 
 toCartesian : Float -> Coordinate -> ( Float, Float )
 toCartesian scale coordinate =
     let
         ( x, y ) =
-            coordinate |> Tuple.mapFirst toFloat |> Tuple.mapSecond toFloat
+            toFloat coordinate
+
+        x_ =
+            (sqrt 3) / 2 * x * scale
+
+        y_ =
+            ((x / 2) - y) * scale
     in
-        ( (sqrt 3) / 2 * x, (x / 2) - y )
-            |> Tuple.mapFirst ((*) scale)
-            |> Tuple.mapSecond ((*) scale)
+        ( x_, y_ )
+
+
+toFloat : Coordinate -> ( Float, Float )
+toFloat ( x, y ) =
+    ( Basics.toFloat x, Basics.toFloat y )
+
+
+toString : ( number, number ) -> ( String, String )
+toString ( x, y ) =
+    ( Basics.toString x, Basics.toString y )
+
+
+origin : Coordinate
+origin =
+    ( 0, 0 )
 
 
 

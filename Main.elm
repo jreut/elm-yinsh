@@ -2,26 +2,30 @@ module Main exposing (..)
 
 import Dict exposing (Dict)
 import Html exposing (Html)
-import Html.Attributes
+import Html.Attributes exposing (style)
 import Svg exposing (Svg)
-import Svg.Attributes exposing (..)
+import Svg.Attributes
+    exposing
+        ( cx
+        , cy
+        , r
+        , fill
+        , stroke
+        , strokeWidth
+        )
 import Svg.Events exposing (onClick)
 import Board
 import Player
-import Coordinate exposing (Coordinate)
+import Coordinate.Hexagonal as Hex
 import BoardView
 
 
-type alias Position =
-    ( Coordinate, Occupant )
-
-
-toCoordinate : Position -> BoardView.Coordinate
+toCoordinate : Board.Position Occupant -> BoardView.Coordinate
 toCoordinate ( coordinate, _ ) =
-    Coordinate.toCartesian 2 coordinate
+    Hex.toCartesian 2 coordinate
 
 
-toMsg : BoardView.State -> Position -> Msg
+toMsg : BoardView.State -> Board.Position Occupant -> Msg
 toMsg state position =
     case position of
         ( coordinate, Empty ) ->
@@ -31,16 +35,11 @@ toMsg state position =
             NoOp
 
 
-toSvg : Position -> Svg Msg
+toSvg : Board.Position Occupant -> Svg Msg
 toSvg position =
     let
         ( x, y ) =
-            toCoordinate position
-                |> Tuple.mapFirst toString
-                |> Tuple.mapSecond toString
-
-        occupant =
-            Tuple.second position
+            (toCoordinate >> Hex.toString) position
 
         circle =
             \r_ attrs ->
@@ -48,21 +47,18 @@ toSvg position =
                     ([ cx x, cy y, r r_ ] ++ attrs)
                     []
     in
-        case occupant of
+        case Tuple.second position of
             Ring player ->
-                circle "4%"
-                    [ fill "none", stroke (Player.view player), strokeWidth "1%" ]
+                circle "4%" [ fill "none", stroke (Player.view player), strokeWidth "1%" ]
 
             Marker player ->
-                circle "2%"
-                    [ fill (Player.view player) ]
+                circle "2%" [ fill (Player.view player) ]
 
             Empty ->
-                circle "0"
-                    [ fill "none" ]
+                circle "0" [ fill "none" ]
 
 
-boardConfig : BoardView.Config Position Msg
+boardConfig : BoardView.Config (Board.Position Occupant) Msg
 boardConfig =
     { toCoordinate = toCoordinate
     , toMsg = toMsg
@@ -84,7 +80,7 @@ type alias Model =
 
 type Msg
     = NoOp
-    | PlaceRing Coordinate
+    | PlaceRing Hex.Coordinate
 
 
 radius : Float
@@ -106,12 +102,11 @@ view : Model -> Html Msg
 view model =
     let
         svg =
-            model.board
-                |> Dict.toList
+            Board.positions model.board
                 |> BoardView.view boardConfig ()
     in
         Html.main_
-            [ Html.Attributes.style [ ( "background-color", "lightblue" ) ] ]
+            [ style [ ( "background-color", "lightblue" ) ] ]
             [ svg ]
 
 
