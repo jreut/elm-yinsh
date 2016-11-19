@@ -22,9 +22,9 @@ toCoordinate ( coordinate, _ ) =
 
 
 toMsg : BoardView.State -> Position -> Msg
-toMsg state ( coordinate, occupant ) =
-    case ( coordinate, occupant ) of
-        ( c, Empty ) ->
+toMsg state position =
+    case position of
+        ( coordinate, Empty ) ->
             PlaceRing coordinate
 
         ( _, _ ) ->
@@ -105,13 +105,14 @@ main =
 view : Model -> Html Msg
 view model =
     let
-        data =
-            model.board |> Dict.toList
-
         svg =
-            BoardView.view boardConfig () data
+            model.board
+                |> Dict.toList
+                |> BoardView.view boardConfig ()
     in
-        Html.main_ [ Html.Attributes.style [ ( "background-color", "lightblue" ) ] ] [ svg ]
+        Html.main_
+            [ Html.Attributes.style [ ( "background-color", "lightblue" ) ] ]
+            [ svg ]
 
 
 init : ( Model, Cmd Msg )

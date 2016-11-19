@@ -40,7 +40,6 @@ view config state data =
             [ viewBox "-10 -10 20 20"
             , height "100vh"
             , width "100vw"
-            , fontSize "5%"
             ]
 
 
@@ -51,41 +50,48 @@ viewPosition { toCoordinate, toMsg, toSvg } state data =
             toCoordinate data
     in
         g []
-            [ viewLines coordinate
+            [ viewBackground coordinate
             , toSvg data
-            , circle
-                [ cx (Tuple.first coordinate |> toString)
-                , cy (Tuple.second coordinate |> toString)
-                , r "3%"
-                , fill "none"
-                , pointerEvents "all"
-                , onClick (toMsg state data)
-                ]
-                []
+            , viewForeground coordinate (toMsg state data)
             ]
+
+
+viewForeground : Coordinate -> msg -> Svg msg
+viewForeground ( x, y ) msg =
+    circle
+        [ cx (toString x)
+        , cy (toString y)
+        , r "3%"
+        , fill "none"
+        , pointerEvents "all"
+        , onClick msg
+        ]
+        []
+
+
+viewBackground : Coordinate -> Svg msg
+viewBackground =
+    viewLines
 
 
 viewLines : Coordinate -> Svg msg
-viewLines ( x, y ) =
-    let
-        line =
-            \x_ y_ ->
-                Svg.line
-                    [ x1 (toString x)
-                    , y1 (toString y)
-                    , x2 (toString (x + x_))
-                    , y2 (toString (y + y_))
-                    , stroke "black"
-                    , strokeWidth "0.3%"
-                    ]
-                    []
-    in
-        Svg.g
-            []
-            [ line 0 1
-            , line 0 -1
-            , line ((sqrt 3) / 2) (1 / 2)
-            , line ((sqrt 3) / 2) (-1 / 2)
-            , line ((sqrt 3) / -2) (-1 / 2)
-            , line ((sqrt 3) / -2) (1 / 2)
-            ]
+viewLines coordinate =
+    [ ( 0, 1 )
+    , ( (sqrt 3) / 2, 1 / 2 )
+    , ( (sqrt 3) / -2, 1 / 2 )
+    ]
+        |> List.map (viewLine coordinate)
+        |> g []
+
+
+viewLine : Coordinate -> Coordinate -> Svg msg
+viewLine ( x, y ) ( x_, y_ ) =
+    line
+        [ x1 (toString (x - x_))
+        , y1 (toString (y - y_))
+        , x2 (toString (x + x_))
+        , y2 (toString (y + y_))
+        , stroke "black"
+        , strokeWidth "0.3%"
+        ]
+        []
