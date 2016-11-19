@@ -15,7 +15,7 @@ import Svg.Attributes
         )
 import Svg.Events exposing (onClick)
 import Board
-import Player
+import Player exposing (Player)
 import Coordinate.Hexagonal as Hex
 import BoardView
 
@@ -31,7 +31,10 @@ toMsg state position =
         ( coordinate, Empty ) ->
             PlaceRing coordinate
 
-        ( _, _ ) ->
+        ( coordinate, Ring _ ) ->
+            NoOp
+
+        ( _, Marker _ ) ->
             NoOp
 
 
@@ -68,19 +71,20 @@ boardConfig =
 
 type Occupant
     = Empty
-    | Ring Player.Model
-    | Marker Player.Model
+    | Ring Player
+    | Marker Player
 
 
 type alias Model =
     { board : Board.Model Occupant
-    , currentPlayer : Player.Model
+    , currentPlayer : Player
     }
 
 
 type Msg
     = NoOp
     | PlaceRing Hex.Coordinate
+    | PlaceMarker Hex.Coordinate
 
 
 radius : Float
@@ -122,11 +126,18 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         PlaceRing coordinate ->
-            { model
-                | board = Board.update coordinate (Ring model.currentPlayer) model.board
-                , currentPlayer = Player.update model.currentPlayer
-            }
-                ! []
+            placeOccupant coordinate (Ring model.currentPlayer) model ! []
+
+        PlaceMarker coordinate ->
+            placeOccupant coordinate (Marker model.currentPlayer) model ! []
 
         NoOp ->
             model ! []
+
+
+placeOccupant : Hex.Coordinate -> Occupant -> Model -> Model
+placeOccupant coordinate occupant model =
+    { model
+        | board = Board.update coordinate occupant model.board
+        , currentPlayer = Player.update model.currentPlayer
+    }

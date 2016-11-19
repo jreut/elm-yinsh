@@ -1,23 +1,23 @@
 module Player
     exposing
-        ( Model
+        ( Player
         , init
         , update
         , view
         )
 
 
-type Model
+type Player
     = White
     | Black
 
 
-init : Model
+init : Player
 init =
     White
 
 
-update : Model -> Model
+update : Player -> Player
 update player =
     case player of
         White ->
@@ -27,7 +27,7 @@ update player =
             White
 
 
-view : Model -> String
+view : Player -> String
 view player =
     case player of
         Black ->
