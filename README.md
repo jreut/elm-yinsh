@@ -6,7 +6,7 @@ The [Yinsh][yinsh] board game, written in [Elm][elm-lang]
 
 ```sh
 npm i -g elm@0.18.0
-elm make Main.elm
+elm make src/Main.elm
 open index.html
 ```
 
@@ -14,7 +14,7 @@ For live-reloading, you can use `elm-live`:
 
 ```sh
 npm i -g elm-live@2.6.0
-elm live Main.elm
+elm live src/Main.elm
 open http://localhost:800
 ```
 
