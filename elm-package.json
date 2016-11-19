@@ -4,7 +4,7 @@
     "repository": "https://github.com/jreut/elm-yinsh.git",
     "license": "Unlicense",
     "source-directories": [
-        "."
+        "src"
     ],
     "exposed-modules": [],
     "dependencies": {
