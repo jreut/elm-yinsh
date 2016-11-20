@@ -191,6 +191,7 @@ boardConfig { phase } =
         { toCoordinate = toCoordinate
         , toMsg = \_ -> toMsg
         , toSvg = toSvg
+        , disabledMsg = NoOp
         }
 
 
