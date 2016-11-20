@@ -1,6 +1,5 @@
 module Main exposing (..)
 
-import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Svg exposing (Svg)
@@ -13,7 +12,6 @@ import Svg.Attributes
         , stroke
         , strokeWidth
         )
-import Svg.Events exposing (onClick)
 import Board
 import Player exposing (Player)
 import Coordinate.Hexagonal as Hex
@@ -36,8 +34,8 @@ main =
 
 type alias Model =
     { board : Board
-    , currentPlayer : Player
     , boardView : BoardView.State
+    , phase : Phase Player
     }
 
 
@@ -55,11 +53,19 @@ type Occupant
     | Marker Player
 
 
+type Phase a
+    = PlacingRing Int a
+    | PlacingMarker a
+    | MovingRing a
+    | RemovingRing a
+    | RemovingRun a
+
+
 init : ( Model, Cmd Msg )
 init =
     { board = Board.init radius Empty
-    , currentPlayer = Player.init
     , boardView = BoardView.init
+    , phase = PlacingRing 9 Player.init
     }
         ! []
 
@@ -77,27 +83,76 @@ type Msg
     = NoOp
     | PlaceRing Hex.Coordinate
     | PlaceMarker Hex.Coordinate
+    | MoveRing Hex.Coordinate
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        PlaceRing coordinate ->
-            placeOccupant coordinate (Ring model.currentPlayer) model ! []
+    let
+        model_ =
+            case msg of
+                PlaceRing coordinate ->
+                    placeRing coordinate model
 
-        PlaceMarker coordinate ->
-            placeOccupant coordinate (Marker model.currentPlayer) model ! []
+                PlaceMarker coordinate ->
+                    placeMarker coordinate model
 
-        NoOp ->
-            model ! []
+                MoveRing coordinate ->
+                    moveRing coordinate model
+
+                NoOp ->
+                    model
+    in
+        model_ ! []
 
 
-placeOccupant : Hex.Coordinate -> Occupant -> Model -> Model
-placeOccupant coordinate occupant model =
-    { model
-        | board = Board.update coordinate occupant model.board
-        , currentPlayer = Player.update model.currentPlayer
-    }
+placeRing : Hex.Coordinate -> Model -> Model
+placeRing coordinate model =
+    let
+        placeRing_ =
+            \player -> Board.update coordinate (Ring player) model.board
+    in
+        case model.phase of
+            PlacingRing 0 player ->
+                { model
+                    | board = placeRing_ player
+                    , phase = PlacingMarker (Player.update player)
+                }
+
+            PlacingRing remaining player ->
+                { model
+                    | board = placeRing_ player
+                    , phase = PlacingRing (remaining - 1) (Player.update player)
+                }
+
+            _ ->
+                model
+
+
+placeMarker : Hex.Coordinate -> Model -> Model
+placeMarker coordinate model =
+    case model.phase of
+        PlacingMarker player ->
+            { model
+                | board = Board.update coordinate (Marker player) model.board
+                , phase = MovingRing player
+            }
+
+        _ ->
+            model
+
+
+moveRing : Hex.Coordinate -> Model -> Model
+moveRing coordinate model =
+    case model.phase of
+        MovingRing player ->
+            { model
+                | board = Board.update coordinate (Ring player) model.board
+                , phase = PlacingMarker (Player.update player)
+            }
+
+        _ ->
+            model
 
 
 
@@ -109,19 +164,34 @@ view model =
     let
         svg =
             Board.positions model.board
-                |> BoardView.view boardConfig ()
+                |> BoardView.view (boardConfig model) model.boardView
     in
         Html.main_
             [ style [ ( "background-color", "lightblue" ) ] ]
             [ svg ]
 
 
-boardConfig : BoardView.Config Position Msg
-boardConfig =
-    { toCoordinate = toCoordinate
-    , toMsg = toMsg
-    , toSvg = toSvg
-    }
+boardConfig : Model -> BoardView.Config Position Msg
+boardConfig { phase } =
+    let
+        toMsg =
+            case phase of
+                PlacingRing _ _ ->
+                    initialRingPlacement
+
+                PlacingMarker player ->
+                    markerPlacement player
+
+                MovingRing _ ->
+                    ringReplacement
+
+                _ ->
+                    initialRingPlacement
+    in
+        { toCoordinate = toCoordinate
+        , toMsg = \_ -> toMsg
+        , toSvg = toSvg
+        }
 
 
 toCoordinate : Position -> BoardView.Coordinate
@@ -129,16 +199,36 @@ toCoordinate ( coordinate, _ ) =
     Hex.toCartesian 2 coordinate
 
 
-toMsg : BoardView.State -> Position -> Msg
-toMsg _ position =
+initialRingPlacement : Position -> Msg
+initialRingPlacement position =
     case position of
         ( coordinate, Empty ) ->
             PlaceRing coordinate
 
-        ( coordinate, Ring _ ) ->
+        _ ->
             NoOp
 
-        ( _, Marker _ ) ->
+
+markerPlacement : Player -> Position -> Msg
+markerPlacement player position =
+    case position of
+        ( coordinate, Ring player_ ) ->
+            if player_ == player then
+                PlaceMarker coordinate
+            else
+                NoOp
+
+        _ ->
+            NoOp
+
+
+ringReplacement : Position -> Msg
+ringReplacement position =
+    case position of
+        ( coordinate, Empty ) ->
+            MoveRing coordinate
+
+        _ ->
             NoOp
 
 
