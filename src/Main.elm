@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Set
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Svg exposing (Svg)
@@ -56,7 +57,7 @@ type Occupant
 type Phase a
     = PlacingRing Int a
     | PlacingMarker a
-    | MovingRing a
+    | MovingRing Hex.Coordinate a
     | RemovingRing a
     | RemovingRun a
 
@@ -135,7 +136,7 @@ placeMarker coordinate model =
         PlacingMarker player ->
             { model
                 | board = Board.update coordinate (Marker player) model.board
-                , phase = MovingRing player
+                , phase = MovingRing coordinate player
             }
 
         _ ->
@@ -145,7 +146,7 @@ placeMarker coordinate model =
 moveRing : Hex.Coordinate -> Model -> Model
 moveRing coordinate model =
     case model.phase of
-        MovingRing player ->
+        MovingRing _ player ->
             { model
                 | board = Board.update coordinate (Ring player) model.board
                 , phase = PlacingMarker (Player.update player)
@@ -172,18 +173,18 @@ view model =
 
 
 boardConfig : Model -> BoardView.Config Position Msg
-boardConfig { phase } =
+boardConfig model =
     let
         toMsg =
-            case phase of
+            case model.phase of
                 PlacingRing _ _ ->
                     initialRingPlacement
 
                 PlacingMarker player ->
                     markerPlacement player
 
-                MovingRing _ ->
-                    ringReplacement
+                MovingRing coordinate _ ->
+                    ringReplacement coordinate model
 
                 _ ->
                     initialRingPlacement
@@ -223,11 +224,14 @@ markerPlacement player position =
             NoOp
 
 
-ringReplacement : Position -> Msg
-ringReplacement position =
+ringReplacement : Hex.Coordinate -> Model -> Position -> Msg
+ringReplacement origin model position =
     case position of
-        ( coordinate, Empty ) ->
-            MoveRing coordinate
+        ( destination, Empty ) ->
+            if validMove model origin destination then
+                MoveRing destination
+            else
+                NoOp
 
         _ ->
             NoOp
@@ -257,3 +261,13 @@ circle radius fill_ attrs coordinate =
             coordinate |> Hex.toCartesian 2 |> Hex.toString
     in
         Svg.circle ([ cx x, cy y, r radius, fill fill_ ] ++ attrs) []
+
+
+
+-- FUN STUFF
+
+
+validMove : Model -> Hex.Coordinate -> Hex.Coordinate -> Bool
+validMove model origin destination =
+    Board.runsOf origin Empty model.board
+        |> Set.member destination
