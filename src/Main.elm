@@ -1,6 +1,8 @@
 module Main exposing (..)
 
 import Set
+import Dict
+import List.Extra
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Svg exposing (Svg)
@@ -225,16 +227,11 @@ markerPlacement player position =
 
 
 ringReplacement : Hex.Coordinate -> Model -> Position -> Msg
-ringReplacement origin model position =
-    case position of
-        ( destination, Empty ) ->
-            if validMove model origin destination then
-                MoveRing destination
-            else
-                NoOp
-
-        _ ->
-            NoOp
+ringReplacement origin model ( destination, _ ) =
+    if validMove model origin destination then
+        MoveRing destination
+    else
+        NoOp
 
 
 toSvg : Position -> Svg Msg
@@ -269,5 +266,60 @@ circle radius fill_ attrs coordinate =
 
 validMove : Model -> Hex.Coordinate -> Hex.Coordinate -> Bool
 validMove model origin destination =
-    Board.runsOf origin Empty model.board
+    Board.filteredRuns runFilter origin model.board
         |> Set.member destination
+
+
+
+-- All of this totally copied from @sharkdp
+-- https://github.com/sharkdp/yinsh/blob/master/src/Yinsh.hs#L228-L237
+
+
+runFilter : Board.RunFilter Occupant
+runFilter model xs =
+    let
+        ( free, rest ) =
+            List.Extra.span (emptyCoordinate model) xs
+    in
+        case jumpCoordinate model rest of
+            Nothing ->
+                free
+
+            Just a ->
+                free ++ [ a ]
+
+
+emptyCoordinate : Board -> Hex.Coordinate -> Bool
+emptyCoordinate model coord =
+    case Dict.get coord model of
+        Nothing ->
+            False
+
+        Just occupant ->
+            case occupant of
+                Empty ->
+                    True
+
+                _ ->
+                    False
+
+
+jumpCoordinate : Board -> List Hex.Coordinate -> Maybe Hex.Coordinate
+jumpCoordinate model xs =
+    case xs of
+        [] ->
+            Nothing
+
+        y :: ys ->
+            case Dict.get y model of
+                Nothing ->
+                    Nothing
+
+                Just (Ring _) ->
+                    Nothing
+
+                Just (Marker _) ->
+                    jumpCoordinate model ys
+
+                Just Empty ->
+                    Just y

@@ -5,7 +5,8 @@ module Board
         , init
         , update
         , positions
-        , runsOf
+        , RunFilter
+        , filteredRuns
         )
 
 import Coordinate.Hexagonal exposing (Coordinate, validWithin, squareOf)
@@ -48,38 +49,26 @@ type Direction
     | Out
 
 
-runsOf : Coordinate -> a -> Model a -> Set Coordinate
-runsOf origin occupant model =
-    let
-        runOf_ =
-            \dir acc -> runOf origin dir occupant acc model
-    in
-        runOf_ Up Set.empty
-            |> runOf_ Down
-            |> runOf_ Left
-            |> runOf_ Right
-            |> runOf_ In
-            |> runOf_ Out
+type alias RunFilter a =
+    Model a -> List Coordinate -> List Coordinate
 
 
-runOf : Coordinate -> Direction -> a -> Set Coordinate -> Model a -> Set Coordinate
-runOf origin direction desiredOccupant acc model =
-    let
-        next =
-            add direction origin
-    in
-        case Dict.get next model of
-            Nothing ->
-                acc
-
-            Just occupant_ ->
-                if occupant_ == desiredOccupant then
-                    runOf next direction desiredOccupant (Set.insert next acc) model
-                else
-                    acc
+filteredRuns : RunFilter a -> Coordinate -> Model a -> Set Coordinate
+filteredRuns filter origin model =
+    [ Up
+    , Down
+    , Left
+    , Right
+    , In
+    , Out
+    ]
+        |> List.map (\dir -> runIn origin dir [] model)
+        |> List.map List.reverse
+        |> List.concatMap (filter model)
+        |> Set.fromList
 
 
-runIn : Coordinate -> Direction -> Set Coordinate -> Model a -> Set Coordinate
+runIn : Coordinate -> Direction -> List Coordinate -> Model a -> List Coordinate
 runIn origin direction acc model =
     let
         next =
@@ -90,7 +79,7 @@ runIn origin direction acc model =
                 acc
 
             Just _ ->
-                runIn next direction (Set.insert next acc) model
+                runIn next direction (next :: acc) model
 
 
 add : Direction -> Coordinate -> Coordinate
