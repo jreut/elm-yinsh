@@ -15,7 +15,7 @@ For live-reloading, you can use `elm-live`:
 ```sh
 npm i -g elm-live@2.6.0
 elm live src/Main.elm
-open http://localhost:800
+open http://localhost:8000
 ```
 
 [yinsh]: http://www.gipf.com/yinsh/
