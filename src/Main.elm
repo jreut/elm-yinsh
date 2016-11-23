@@ -202,10 +202,10 @@ boardConfig model =
                     initialRingPlacement
 
                 PlacingMarker player ->
-                    markerPlacement player
+                    markerPlacement model player
 
                 MovingRing coordinate _ ->
-                    ringReplacement coordinate model
+                    ringReplacement model coordinate
 
                 _ ->
                     initialRingPlacement
@@ -232,21 +232,36 @@ initialRingPlacement position =
             NoOp
 
 
-markerPlacement : Player -> Position -> Msg
-markerPlacement player position =
-    case position of
-        ( coordinate, Ring player_ ) ->
-            if player_ == player then
-                PlaceMarker coordinate
-            else
-                NoOp
-
-        _ ->
-            NoOp
+markerPlacement : Model -> Player -> Position -> Msg
+markerPlacement model player position =
+    if moveableRing model position player then
+        Tuple.first position |> PlaceMarker
+    else
+        NoOp
 
 
-ringReplacement : Hex.Coordinate -> Model -> Position -> Msg
-ringReplacement origin model ( destination, _ ) =
+moveableRing : Model -> Position -> Player -> Bool
+moveableRing model ( coordinate, occupant ) player =
+    -- TODO: optimize me
+    let
+        playersEqual other =
+            other == player
+
+        availableMoves =
+            Board.positions model.board
+                |> List.map (Tuple.first >> (validMove model coordinate))
+                |> List.any identity
+    in
+        case occupant of
+            Ring player_ ->
+                playersEqual player_ && availableMoves
+
+            _ ->
+                False
+
+
+ringReplacement : Model -> Hex.Coordinate -> Position -> Msg
+ringReplacement model origin ( destination, _ ) =
     if validMove model origin destination then
         MoveRing origin destination
     else
