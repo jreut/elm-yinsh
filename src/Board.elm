@@ -7,6 +7,7 @@ module Board
         , positions
         , RunFilter
         , filteredRuns
+        , runTo
         )
 
 import Coordinate.Hexagonal exposing (Coordinate, validWithin, squareOf)
@@ -80,6 +81,30 @@ runIn origin direction acc model =
 
             Just _ ->
                 runIn next direction (next :: acc) model
+
+
+runTo : Coordinate -> Coordinate -> List Coordinate -> Model a -> List Coordinate
+runTo origin destination acc model =
+    List.concatMap
+        (\dir -> tryRun origin destination dir [] model)
+        [ Up, Down, Left, Right, In, Out ]
+
+
+tryRun : Coordinate -> Coordinate -> Direction -> List Coordinate -> Model a -> List Coordinate
+tryRun origin destination direction acc model =
+    let
+        next =
+            add direction origin
+    in
+        if next == destination then
+            next :: acc
+        else
+            case Dict.get next model of
+                Nothing ->
+                    []
+
+                Just _ ->
+                    tryRun next destination direction (next :: acc) model
 
 
 add : Direction -> Coordinate -> Coordinate

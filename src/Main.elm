@@ -86,7 +86,7 @@ type Msg
     = NoOp
     | PlaceRing Hex.Coordinate
     | PlaceMarker Hex.Coordinate
-    | MoveRing Hex.Coordinate
+    | MoveRing Hex.Coordinate Hex.Coordinate
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -100,8 +100,8 @@ update msg model =
                 PlaceMarker coordinate ->
                     placeMarker coordinate model
 
-                MoveRing coordinate ->
-                    moveRing coordinate model
+                MoveRing from to ->
+                    moveRing from to model
 
                 NoOp ->
                     model
@@ -145,17 +145,47 @@ placeMarker coordinate model =
             model
 
 
-moveRing : Hex.Coordinate -> Model -> Model
-moveRing coordinate model =
-    case model.phase of
-        MovingRing _ player ->
-            { model
-                | board = Board.update coordinate (Ring player) model.board
-                , phase = PlacingMarker (Player.update player)
-            }
+moveRing : Hex.Coordinate -> Hex.Coordinate -> Model -> Model
+moveRing from to model =
+    let
+        toFlip =
+            Board.runTo from to [] model.board
 
-        _ ->
-            model
+        flipped =
+            flipMarkers toFlip model.board
+    in
+        case model.phase of
+            MovingRing _ player ->
+                { model
+                    | board = Board.update to (Ring player) flipped
+                    , phase = PlacingMarker (Player.update player)
+                }
+
+            _ ->
+                model
+
+
+flipMarkers : List Hex.Coordinate -> Board -> Board
+flipMarkers coordinates model =
+    List.foldr flipMarker model coordinates
+
+
+flipMarker : Hex.Coordinate -> Board -> Board
+flipMarker coordinate model =
+    let
+        flipped : Maybe Occupant -> Maybe Occupant
+        flipped maybeOccupant =
+            case maybeOccupant of
+                Nothing ->
+                    maybeOccupant
+
+                Just (Marker player) ->
+                    Just (Marker (Player.update player))
+
+                Just _ ->
+                    maybeOccupant
+    in
+        Dict.update coordinate flipped model
 
 
 
@@ -229,7 +259,7 @@ markerPlacement player position =
 ringReplacement : Hex.Coordinate -> Model -> Position -> Msg
 ringReplacement origin model ( destination, _ ) =
     if validMove model origin destination then
-        MoveRing destination
+        MoveRing origin destination
     else
         NoOp
 
