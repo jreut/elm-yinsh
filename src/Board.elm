@@ -41,7 +41,7 @@ init : Float -> a -> Model a
 init radius initial =
     squareOf (ceiling radius)
         |> List.filter (validWithin radius)
-        |> List.map (\e -> ( e, initial ))
+        |> List.map (flip (,) initial)
         |> Dict.fromList
 
 
@@ -53,14 +53,14 @@ update =
 filteredRuns : RunFilter a -> Coordinate -> Model a -> Set Coordinate
 filteredRuns filter origin model =
     directions
-        |> List.map (\dir -> runIn origin dir [] model)
+        |> List.map (ray origin [] model)
         |> List.map List.reverse
         |> List.concatMap (filter model)
         |> Set.fromList
 
 
-runIn : Coordinate -> Direction -> Run -> Model a -> Run
-runIn origin direction acc model =
+ray : Coordinate -> Run -> Model a -> Direction -> Run
+ray origin acc model direction =
     let
         next =
             add direction origin
@@ -70,7 +70,7 @@ runIn origin direction acc model =
                 acc
 
             Just _ ->
-                runIn next direction (next :: acc) model
+                ray next (next :: acc) model direction
 
 
 line : Coordinate -> Coordinate -> Model a -> Run
@@ -81,12 +81,12 @@ line origin destination =
 runTo : Coordinate -> Coordinate -> Run -> Model a -> Run
 runTo origin destination acc model =
     List.concatMap
-        (\dir -> tryRun origin destination dir [] model)
+        (tryRun origin destination [] model)
         directions
 
 
-tryRun : Coordinate -> Coordinate -> Direction -> Run -> Model a -> Run
-tryRun origin destination direction acc model =
+tryRun : Coordinate -> Coordinate -> Run -> Model a -> Direction -> Run
+tryRun origin destination acc model direction =
     let
         next =
             add direction origin
@@ -99,4 +99,4 @@ tryRun origin destination direction acc model =
                     []
 
                 Just _ ->
-                    tryRun next destination direction (next :: acc) model
+                    tryRun next destination (next :: acc) model direction
