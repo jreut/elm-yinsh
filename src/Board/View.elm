@@ -1,4 +1,4 @@
-module BoardView
+module Board.View
     exposing
         ( State
         , Config
