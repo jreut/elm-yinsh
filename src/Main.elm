@@ -149,7 +149,7 @@ moveRing : Hex.Coordinate -> Hex.Coordinate -> Model -> Model
 moveRing from to model =
     let
         flipped =
-            Board.runTo from to [] model.board
+            Board.line from to model.board
                 |> flipMarkers model.board
     in
         case model.phase of
@@ -290,7 +290,7 @@ circle radius fill_ attrs coordinate =
 
 validMove : Model -> Hex.Coordinate -> Hex.Coordinate -> Bool
 validMove model origin destination =
-    Board.filteredRuns runFilter origin model.board
+    Board.filteredRuns jumpCoordinates origin model.board
         |> Set.member destination
 
 
@@ -299,11 +299,11 @@ validMove model origin destination =
 -- https://github.com/sharkdp/yinsh/blob/master/src/Yinsh.hs#L228-L237
 
 
-runFilter : Board.RunFilter Occupant
-runFilter model xs =
+jumpCoordinates : Board.RunFilter Occupant
+jumpCoordinates model xs =
     let
         ( free, rest ) =
-            List.Extra.span (emptyCoordinate model) xs
+            List.Extra.span (isEmpty model) xs
     in
         case jumpCoordinate model rest of
             Nothing ->
@@ -313,8 +313,8 @@ runFilter model xs =
                 free ++ [ a ]
 
 
-emptyCoordinate : Board -> Hex.Coordinate -> Bool
-emptyCoordinate model coord =
+isEmpty : Board -> Hex.Coordinate -> Bool
+isEmpty model coord =
     case Dict.get coord model of
         Nothing ->
             False
