@@ -150,7 +150,7 @@ moveRing from to model =
     let
         flipped =
             Board.line from to model.board
-                |> flipMarkers model.board
+                |> List.foldr flipMarker model.board
     in
         case model.phase of
             MovingRing _ player ->
@@ -161,11 +161,6 @@ moveRing from to model =
 
             _ ->
                 model
-
-
-flipMarkers : Board -> List Hex.Coordinate -> Board
-flipMarkers =
-    List.foldr flipMarker
 
 
 flipMarker : Hex.Coordinate -> Board -> Board
@@ -223,8 +218,8 @@ boardConfig model =
 
 
 toCoordinate : Position -> Board.View.Coordinate
-toCoordinate ( coordinate, _ ) =
-    Hex.toCartesian 2 coordinate
+toCoordinate =
+    Tuple.first >> Hex.toCartesian 2
 
 
 initialRingPlacement : Position -> Msg
