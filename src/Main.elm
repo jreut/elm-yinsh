@@ -148,11 +148,9 @@ placeMarker coordinate model =
 moveRing : Hex.Coordinate -> Hex.Coordinate -> Model -> Model
 moveRing from to model =
     let
-        toFlip =
-            Board.runTo from to [] model.board
-
         flipped =
-            flipMarkers toFlip model.board
+            Board.runTo from to [] model.board
+                |> flipMarkers model.board
     in
         case model.phase of
             MovingRing _ player ->
@@ -165,27 +163,23 @@ moveRing from to model =
                 model
 
 
-flipMarkers : List Hex.Coordinate -> Board -> Board
-flipMarkers coordinates model =
-    List.foldr flipMarker model coordinates
+flipMarkers : Board -> List Hex.Coordinate -> Board
+flipMarkers =
+    List.foldr flipMarker
 
 
 flipMarker : Hex.Coordinate -> Board -> Board
-flipMarker coordinate model =
+flipMarker coordinate =
     let
-        flipped : Maybe Occupant -> Maybe Occupant
-        flipped maybeOccupant =
-            case maybeOccupant of
-                Nothing ->
-                    maybeOccupant
+        flip occupant =
+            case occupant of
+                Marker player ->
+                    Marker (Player.update player)
 
-                Just (Marker player) ->
-                    Just (Marker (Player.update player))
-
-                Just _ ->
-                    maybeOccupant
+                _ ->
+                    occupant
     in
-        Dict.update coordinate flipped model
+        Dict.update coordinate (Maybe.map flip)
 
 
 
