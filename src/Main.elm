@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Set
+import Set exposing (Set)
 import Dict
 import List.Extra
 import Html exposing (Html)
@@ -238,19 +238,16 @@ markerPlacement model player position =
 
 moveableRing : Model -> Position -> Player -> Bool
 moveableRing model ( coordinate, occupant ) player =
-    -- TODO: optimize me
     let
         playersEqual other =
             other == player
 
-        availableMoves =
-            Board.positions model.board
-                |> List.map (Tuple.first >> (validMove model coordinate))
-                |> List.any identity
+        hasMoves =
+            availableMoves coordinate model.board |> not << Set.isEmpty
     in
         case occupant of
             Ring player_ ->
-                playersEqual player_ && availableMoves
+                playersEqual player_ && hasMoves
 
             _ ->
                 False
@@ -296,8 +293,13 @@ circle radius fill_ attrs coordinate =
 
 validMove : Model -> Hex.Coordinate -> Hex.Coordinate -> Bool
 validMove model origin destination =
-    Board.filteredRuns jumpCoordinates origin model.board
+    availableMoves origin model.board
         |> Set.member destination
+
+
+availableMoves : Hex.Coordinate -> Board -> Set Hex.Coordinate
+availableMoves origin board =
+    Board.filteredRuns jumpCoordinates origin board
 
 
 
