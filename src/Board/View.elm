@@ -22,9 +22,8 @@ type alias Coordinate =
 
 type alias Config data msg =
     { toCoordinate : data -> Coordinate
-    , toMsg : State -> data -> msg
+    , toMsg : State -> data -> Maybe msg
     , toSvg : data -> Svg msg
-    , disabledMsg : msg
     }
 
 
@@ -45,7 +44,7 @@ view config state data =
 
 
 viewPosition : Config data msg -> State -> data -> Svg msg
-viewPosition { toCoordinate, toMsg, toSvg, disabledMsg } state data =
+viewPosition { toCoordinate, toMsg, toSvg } state data =
     let
         coordinate =
             toCoordinate data
@@ -53,28 +52,31 @@ viewPosition { toCoordinate, toMsg, toSvg, disabledMsg } state data =
         g []
             [ viewBackground coordinate
             , toSvg data
-            , viewForeground coordinate disabledMsg (toMsg state data)
+            , viewForeground coordinate (toMsg state data)
             ]
 
 
-viewForeground : Coordinate -> msg -> msg -> Svg msg
-viewForeground ( x, y ) disabledMsg msg =
+viewForeground : Coordinate -> Maybe msg -> Svg msg
+viewForeground ( x, y ) maybeMsg =
     let
-        opacity =
-            if disabledMsg == msg then
-                "0"
-            else
-                "0.3"
+        ( onClick_, opacity ) =
+            case maybeMsg of
+                Nothing ->
+                    ( [], "0" )
+
+                Just msg ->
+                    ( [ onClick msg ], "0.3" )
     in
         circle
-            [ cx (toString x)
-            , cy (toString y)
-            , r "3%"
-            , fill "yellow"
-            , fillOpacity opacity
-            , pointerEvents "all"
-            , onClick msg
-            ]
+            ([ cx (toString x)
+             , cy (toString y)
+             , r "3%"
+             , fill "yellow"
+             , fillOpacity opacity
+             , pointerEvents "all"
+             ]
+                ++ onClick_
+            )
             []
 
 

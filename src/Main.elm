@@ -83,8 +83,7 @@ radius =
 
 
 type Msg
-    = NoOp
-    | PlaceRing Hex.Coordinate
+    = PlaceRing Hex.Coordinate
     | PlaceMarker Hex.Coordinate
     | MoveRing Hex.Coordinate Hex.Coordinate
 
@@ -102,9 +101,6 @@ update msg model =
 
                 MoveRing from to ->
                     moveRing from to model
-
-                NoOp ->
-                    model
     in
         model_ ! []
 
@@ -213,7 +209,6 @@ boardConfig model =
         { toCoordinate = toCoordinate
         , toMsg = \_ -> toMsg
         , toSvg = toSvg
-        , disabledMsg = NoOp
         }
 
 
@@ -222,22 +217,22 @@ toCoordinate =
     Tuple.first >> Hex.toCartesian 2
 
 
-initialRingPlacement : Position -> Msg
+initialRingPlacement : Position -> Maybe Msg
 initialRingPlacement position =
     case position of
         ( coordinate, Empty ) ->
-            PlaceRing coordinate
+            Just (PlaceRing coordinate)
 
         _ ->
-            NoOp
+            Nothing
 
 
-markerPlacement : Model -> Player -> Position -> Msg
+markerPlacement : Model -> Player -> Position -> Maybe Msg
 markerPlacement model player position =
     if moveableRing model position player then
-        Tuple.first position |> PlaceMarker
+        Tuple.first position |> PlaceMarker |> Just
     else
-        NoOp
+        Nothing
 
 
 moveableRing : Model -> Position -> Player -> Bool
@@ -260,12 +255,12 @@ moveableRing model ( coordinate, occupant ) player =
                 False
 
 
-ringReplacement : Model -> Hex.Coordinate -> Position -> Msg
+ringReplacement : Model -> Hex.Coordinate -> Position -> Maybe Msg
 ringReplacement model origin ( destination, _ ) =
     if validMove model origin destination then
-        MoveRing origin destination
+        MoveRing origin destination |> Just
     else
-        NoOp
+        Nothing
 
 
 toSvg : Position -> Svg Msg
