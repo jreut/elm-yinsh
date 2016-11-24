@@ -299,7 +299,9 @@ validMove model origin destination =
 
 availableMoves : Hex.Coordinate -> Board -> Set Hex.Coordinate
 availableMoves origin board =
-    Board.filteredRuns jumpCoordinates origin board
+    Board.filterRays jumpCoordinates origin board
+        |> List.concatMap identity
+        |> Set.fromList
 
 
 

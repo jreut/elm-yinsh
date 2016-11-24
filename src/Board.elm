@@ -5,7 +5,8 @@ module Board
         , init
         , positions
         , RunFilter
-        , filteredRuns
+        , rays
+        , filterRays
         , line
         )
 
@@ -44,13 +45,17 @@ init radius initial =
         |> Dict.fromList
 
 
-filteredRuns : RunFilter a -> Coordinate -> Model a -> Set Coordinate
-filteredRuns filter origin model =
+rays : Coordinate -> Model a -> List (List Coordinate)
+rays =
+    filterRays (always identity)
+
+
+filterRays : RunFilter a -> Coordinate -> Model a -> List (List Coordinate)
+filterRays filter origin model =
     directions
         |> List.map (ray origin [] model)
         |> List.map List.reverse
-        |> List.concatMap (filter model)
-        |> Set.fromList
+        |> List.map (filter model)
 
 
 ray : Coordinate -> Run -> Model a -> Direction -> Run
