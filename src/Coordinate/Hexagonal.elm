@@ -18,7 +18,7 @@ squareOf radius =
         range =
             List.range (negate radius) radius
     in
-        List.concatMap (\x -> List.map (\y -> ( x, y )) range) range
+        List.concatMap (\x -> List.map ((,) x) range) range
 
 
 validWithin : Float -> Coordinate -> Bool
@@ -45,12 +45,12 @@ toCartesian scale coordinate =
             toFloat coordinate
 
         x_ =
-            (sqrt 3) / 2 * x * scale
+            (sqrt 3) / 2 * x
 
         y_ =
-            ((x / 2) - y) * scale
+            ((x / 2) - y)
     in
-        ( x_, y_ )
+        ( x_ * scale, y_ * scale )
 
 
 toFloat : Coordinate -> ( Float, Float )

@@ -62,7 +62,7 @@ type Phase a
     | MovingRing Hex.Coordinate a
       -- TODO: implement removal
     | RemovingRing a
-    | RemovingRun a
+    | RemovingRun (Set Hex.Coordinate)
 
 
 init : ( Model, Cmd Msg )
@@ -87,7 +87,7 @@ type Msg
     = PlaceRing Hex.Coordinate
     | PlaceMarker Hex.Coordinate
     | MoveRing Hex.Coordinate Hex.Coordinate
-    | RemoveRun Hex.Coordinate
+    | RemoveRun (Set Hex.Coordinate)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -104,8 +104,8 @@ update msg model =
                 MoveRing from to ->
                     moveRing from to
 
-                RemoveRun coordinate ->
-                    removeRun coordinate
+                RemoveRun coordinateSet ->
+                    removeRun coordinateSet
     in
         updater model ! []
 
@@ -154,10 +154,12 @@ moveRing from to model =
                 |> List.foldr flipMarker model.board
 
         nextPhase player =
-            if (runsOfFive model.board) |> Debug.log "five" |> List.isEmpty then
-                PlacingMarker (Player.update player)
-            else
-                RemovingRun player
+            case runsOfFive model.board |> Debug.log "five" of
+                [] ->
+                    PlacingMarker (Player.update player)
+
+                x :: xs ->
+                    RemovingRun x
 
         -- RemovingRun player
     in
@@ -186,17 +188,13 @@ flipMarker coordinate =
         Dict.update coordinate (Maybe.map flip)
 
 
-removeRun : Hex.Coordinate -> Model -> Model
-removeRun coordinate model =
-    case Dict.get coordinate model.board of
-        Just (Marker player) ->
-            { model
-                | board = Dict.insert coordinate Empty model.board
-                , phase = PlacingMarker (Player.update player)
-            }
-
-        _ ->
-            model
+removeRun : Set Hex.Coordinate -> Model -> Model
+removeRun coordinateSet model =
+    let
+        newBoard =
+            Set.foldl (\coordinate board -> Dict.insert coordinate Empty board) model.board coordinateSet
+    in
+        { model | board = newBoard, phase = PlacingMarker Player.init }
 
 
 
@@ -229,8 +227,8 @@ boardConfig model =
                 MovingRing coordinate _ ->
                     ringReplacement model coordinate
 
-                RemovingRun player ->
-                    runRemoval model player
+                RemovingRun coordinateSet ->
+                    runRemoval model coordinateSet
 
                 _ ->
                     initialRingPlacement
@@ -289,23 +287,12 @@ ringReplacement model origin ( destination, _ ) =
         Nothing
 
 
-runRemoval : Model -> Player -> Position -> Maybe Msg
-runRemoval model player ( coordinate, occupant ) =
-    let
-        marked =
-            markerRuns model.board
-                |> List.map Set.fromList
-                |> List.foldl Set.diff Set.empty
-    in
-        case occupant of
-            Marker player_ ->
-                if player_ == player then
-                    Just (RemoveRun coordinate)
-                else
-                    Nothing
-
-            _ ->
-                Nothing
+runRemoval : Model -> Set Hex.Coordinate -> Position -> Maybe Msg
+runRemoval model coordinateSet ( coordinate, occupant ) =
+    if Set.member coordinate coordinateSet then
+        Just (RemoveRun coordinateSet)
+    else
+        Nothing
 
 
 toSvg : Position -> Svg Msg
@@ -425,9 +412,11 @@ markerRuns board =
     markers board
         |> Dict.foldl (\k _ -> ((::) (Board.contiguousLines k board))) []
         |> List.concatMap identity
+        |> Debug.log "markers"
 
 
-runsOfFive : Board -> List (List Hex.Coordinate)
-runsOfFive =
-    markerRuns
-        >> List.filter (List.length >> ((==) 4))
+runsOfFive : Board -> List (Set Hex.Coordinate)
+runsOfFive board =
+    markerRuns board
+        |> List.filter (List.length >> ((==) 5))
+        |> List.map (Set.fromList)

@@ -73,6 +73,20 @@ ray origin acc model direction =
                 ray next (next :: acc) model direction
 
 
+rayWithOrigin : Coordinate -> Run -> Model a -> Direction -> Run
+rayWithOrigin origin acc model direction =
+    let
+        next =
+            add direction origin
+    in
+        case Dict.get next model of
+            Nothing ->
+                origin :: acc
+
+            Just _ ->
+                rayWithOrigin next (origin :: acc) model direction
+
+
 line : Coordinate -> Coordinate -> Model a -> Run
 line origin destination =
     runTo origin destination []
@@ -124,6 +138,6 @@ contiguousLine origin direction model =
                 []
 
             Just head ->
-                ray origin [] model direction
+                rayWithOrigin origin [] model direction
                     |> List.reverse
                     |> takeWhile (isHead head)
