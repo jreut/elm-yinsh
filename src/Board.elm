@@ -3,7 +3,6 @@ module Board
         ( Model
         , Position
         , init
-        , update
         , positions
         , RunFilter
         , filteredRuns
@@ -43,11 +42,6 @@ init radius initial =
         |> List.filter (validWithin radius)
         |> List.map (flip (,) initial)
         |> Dict.fromList
-
-
-update : Coordinate -> a -> Model a -> Model a
-update =
-    Dict.insert
 
 
 filteredRuns : RunFilter a -> Coordinate -> Model a -> Set Coordinate

@@ -60,6 +60,7 @@ type Phase a
     = PlacingRing Int a
     | PlacingMarker a
     | MovingRing Hex.Coordinate a
+      -- TODO: implement removal
     | RemovingRing a
     | RemovingRun a
 
@@ -109,7 +110,7 @@ placeRing : Hex.Coordinate -> Model -> Model
 placeRing coordinate model =
     let
         placeRing_ =
-            \player -> Board.update coordinate (Ring player) model.board
+            \player -> Dict.insert coordinate (Ring player) model.board
     in
         case model.phase of
             PlacingRing 0 player ->
@@ -133,7 +134,7 @@ placeMarker coordinate model =
     case model.phase of
         PlacingMarker player ->
             { model
-                | board = Board.update coordinate (Marker player) model.board
+                | board = Dict.insert coordinate (Marker player) model.board
                 , phase = MovingRing coordinate player
             }
 
@@ -151,7 +152,7 @@ moveRing from to model =
         case model.phase of
             MovingRing _ player ->
                 { model
-                    | board = Board.update to (Ring player) flipped
+                    | board = Dict.insert to (Ring player) flipped
                     , phase = PlacingMarker (Player.update player)
                 }
 
