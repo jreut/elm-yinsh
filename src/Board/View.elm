@@ -7,9 +7,26 @@ module Board.View
         , init
         )
 
-import Svg exposing (..)
-import Svg.Attributes exposing (..)
-import Svg.Events exposing (..)
+import Svg exposing (Svg, svg, circle, line, g)
+import Svg.Attributes
+    exposing
+        ( viewBox
+        , height
+        , width
+        , fill
+        , fillOpacity
+        , stroke
+        , strokeWidth
+        , pointerEvents
+        , cx
+        , cy
+        , r
+        , x1
+        , y1
+        , x2
+        , y2
+        )
+import Svg.Events exposing (onClick)
 
 
 type alias State =
@@ -66,18 +83,17 @@ viewForeground ( x, y ) maybeMsg =
 
                 Just msg ->
                     ( [ onClick msg ], "0.3" )
+
+        attrs =
+            [ cx (toString x)
+            , cy (toString y)
+            , r "3%"
+            , fill "yellow"
+            , fillOpacity opacity
+            , pointerEvents "all"
+            ]
     in
-        circle
-            ([ cx (toString x)
-             , cy (toString y)
-             , r "3%"
-             , fill "yellow"
-             , fillOpacity opacity
-             , pointerEvents "all"
-             ]
-                ++ onClick_
-            )
-            []
+        circle (attrs ++ onClick_) []
 
 
 viewBackground : Coordinate -> Svg msg
