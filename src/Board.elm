@@ -8,12 +8,13 @@ module Board
         , rays
         , filterRays
         , line
+        , contiguousLines
         )
 
+import List.Extra exposing (takeWhile)
 import Coordinate.Hexagonal exposing (Coordinate, validWithin, squareOf)
 import Direction exposing (Direction, directions, add)
 import Dict exposing (Dict)
-import Set exposing (Set)
 
 
 type alias Model a =
@@ -99,3 +100,30 @@ tryRun origin destination acc model direction =
 
                 Just _ ->
                     tryRun next destination (next :: acc) model direction
+
+
+contiguousLines : Coordinate -> Model a -> List Run
+contiguousLines origin model =
+    directions
+        |> List.map (\dir -> contiguousLine origin dir model)
+
+
+contiguousLine : Coordinate -> Direction -> Model a -> Run
+contiguousLine origin direction model =
+    let
+        isHead head coordinate =
+            case Dict.get coordinate model of
+                Nothing ->
+                    False
+
+                Just occupant ->
+                    occupant == head
+    in
+        case Dict.get origin model of
+            Nothing ->
+                []
+
+            Just head ->
+                ray origin [] model direction
+                    |> List.reverse
+                    |> takeWhile (isHead head)

@@ -87,23 +87,27 @@ type Msg
     = PlaceRing Hex.Coordinate
     | PlaceMarker Hex.Coordinate
     | MoveRing Hex.Coordinate Hex.Coordinate
+    | RemoveRun Hex.Coordinate
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        model_ =
+        updater =
             case msg of
                 PlaceRing coordinate ->
-                    placeRing coordinate model
+                    placeRing coordinate
 
                 PlaceMarker coordinate ->
-                    placeMarker coordinate model
+                    placeMarker coordinate
 
                 MoveRing from to ->
-                    moveRing from to model
+                    moveRing from to
+
+                RemoveRun coordinate ->
+                    removeRun coordinate
     in
-        model_ ! []
+        updater model ! []
 
 
 placeRing : Hex.Coordinate -> Model -> Model
@@ -148,12 +152,20 @@ moveRing from to model =
         flipped =
             Board.line from to model.board
                 |> List.foldr flipMarker model.board
+
+        nextPhase player =
+            if (runsOfFive model.board) |> Debug.log "five" |> List.isEmpty then
+                PlacingMarker (Player.update player)
+            else
+                RemovingRun player
+
+        -- RemovingRun player
     in
         case model.phase of
             MovingRing _ player ->
                 { model
                     | board = Dict.insert to (Ring player) flipped
-                    , phase = PlacingMarker (Player.update player)
+                    , phase = nextPhase player
                 }
 
             _ ->
@@ -172,6 +184,19 @@ flipMarker coordinate =
                     occupant
     in
         Dict.update coordinate (Maybe.map flip)
+
+
+removeRun : Hex.Coordinate -> Model -> Model
+removeRun coordinate model =
+    case Dict.get coordinate model.board of
+        Just (Marker player) ->
+            { model
+                | board = Dict.insert coordinate Empty model.board
+                , phase = PlacingMarker (Player.update player)
+            }
+
+        _ ->
+            model
 
 
 
@@ -203,6 +228,9 @@ boardConfig model =
 
                 MovingRing coordinate _ ->
                     ringReplacement model coordinate
+
+                RemovingRun player ->
+                    runRemoval model player
 
                 _ ->
                     initialRingPlacement
@@ -259,6 +287,25 @@ ringReplacement model origin ( destination, _ ) =
         MoveRing origin destination |> Just
     else
         Nothing
+
+
+runRemoval : Model -> Player -> Position -> Maybe Msg
+runRemoval model player ( coordinate, occupant ) =
+    let
+        marked =
+            markerRuns model.board
+                |> List.map Set.fromList
+                |> List.foldl Set.diff Set.empty
+    in
+        case occupant of
+            Marker player_ ->
+                if player_ == player then
+                    Just (RemoveRun coordinate)
+                else
+                    Nothing
+
+            _ ->
+                Nothing
 
 
 toSvg : Position -> Svg Msg
@@ -357,3 +404,30 @@ jumpCoordinate model xs =
 
                 Just Empty ->
                     Just y
+
+
+markers : Board -> Board
+markers =
+    let
+        filter _ v =
+            case v of
+                Marker _ ->
+                    True
+
+                _ ->
+                    False
+    in
+        Dict.filter filter
+
+
+markerRuns : Board -> List (List Hex.Coordinate)
+markerRuns board =
+    markers board
+        |> Dict.foldl (\k _ -> ((::) (Board.contiguousLines k board))) []
+        |> List.concatMap identity
+
+
+runsOfFive : Board -> List (List Hex.Coordinate)
+runsOfFive =
+    markerRuns
+        >> List.filter (List.length >> ((==) 4))
