@@ -309,9 +309,9 @@ toCoordinate =
 
 
 initialRingPlacement : Position -> Maybe Msg
-initialRingPlacement position =
-    case position of
-        ( coordinate, Empty ) ->
+initialRingPlacement ( coordinate, occupant ) =
+    case occupant of
+        Empty ->
             Just (PlaceRing coordinate)
 
         _ ->
