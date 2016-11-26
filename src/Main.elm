@@ -154,14 +154,12 @@ moveRing from to model =
                 |> List.foldr flipMarker model.board
 
         nextPhase player =
-            case runsOfFive model.board |> Debug.log "five" of
+            case runsOfFive flipped |> Debug.log "five" of
                 [] ->
                     PlacingMarker (Player.update player)
 
                 x :: xs ->
                     RemovingRun x
-
-        -- RemovingRun player
     in
         case model.phase of
             MovingRing _ player ->
@@ -412,7 +410,6 @@ markerRuns board =
     markers board
         |> Dict.foldl (\k _ -> ((::) (Board.contiguousLines k board))) []
         |> List.concatMap identity
-        |> Debug.log "markers"
 
 
 runsOfFive : Board -> List (Set Hex.Coordinate)
