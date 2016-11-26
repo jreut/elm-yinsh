@@ -113,21 +113,24 @@ update msg model =
 placeRing : Hex.Coordinate -> Model -> Model
 placeRing coordinate model =
     let
-        placeRing_ =
-            \player -> Dict.insert coordinate (Ring player) model.board
+        placeRing_ player model =
+            { model | board = Dict.insert coordinate (Ring player) model.board }
+
+        nextPhase remaining player model =
+            let
+                phase =
+                    if remaining == 0 then
+                        PlacingMarker (Player.update player)
+                    else
+                        PlacingRing (remaining - 1) (Player.update player)
+            in
+                { model | phase = phase }
     in
         case model.phase of
-            PlacingRing 0 player ->
-                { model
-                    | board = placeRing_ player
-                    , phase = PlacingMarker (Player.update player)
-                }
-
             PlacingRing remaining player ->
-                { model
-                    | board = placeRing_ player
-                    , phase = PlacingRing (remaining - 1) (Player.update player)
-                }
+                model
+                    |> placeRing_ player
+                    |> nextPhase remaining player
 
             _ ->
                 model
