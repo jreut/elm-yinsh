@@ -88,6 +88,7 @@ type Msg
     | PlaceMarker Hex.Coordinate
     | MoveRing Hex.Coordinate Hex.Coordinate
     | RemoveRun (Set Hex.Coordinate) Player
+    | RemoveRing Hex.Coordinate
     | KeyUp KeyCode
 
 
@@ -105,6 +106,9 @@ update msg model =
 
         RemoveRun coordinateSet player ->
             removeRun coordinateSet player model ! []
+
+        RemoveRing coordinate ->
+            removeRing coordinate model ! []
 
         KeyUp key ->
             onEscape key undoMarkerPlacement model ! []
@@ -193,7 +197,29 @@ removeRun coordinateSet currentPlayer model =
         newBoard =
             Set.foldl (\coordinate board -> Dict.insert coordinate Empty board) model.board coordinateSet
     in
-        { model | board = newBoard, phase = PlacingMarker (Player.update currentPlayer) }
+        { model
+            | board =
+                newBoard
+                -- , phase = PlacingMarker (Player.update currentPlayer)
+            , phase = RemovingRing currentPlayer
+        }
+
+
+removeRing : Hex.Coordinate -> Model -> Model
+removeRing coordinate model =
+    let
+        nextPhase model =
+            case model.phase of
+                RemovingRing player ->
+                    PlacingMarker (Player.update player)
+
+                _ ->
+                    model.phase
+    in
+        { model
+            | board = Dict.insert coordinate Empty model.board
+            , phase = nextPhase model
+        }
 
 
 onEscape : KeyCode -> (Model -> Model) -> Model -> Model
@@ -264,8 +290,8 @@ boardConfig model =
                 RemovingRun coordinateSets currentPlayer ->
                     runRemoval model coordinateSets currentPlayer
 
-                _ ->
-                    initialRingPlacement
+                RemovingRing player ->
+                    ringRemoval model player
     in
         { toCoordinate = toCoordinate
         , toMsg = \_ -> toMsg
@@ -329,6 +355,19 @@ runRemoval model coordinateSets currentPlayer ( coordinate, occupant ) =
 
         x :: xs ->
             Just (RemoveRun x currentPlayer)
+
+
+ringRemoval : Model -> Player -> Position -> Maybe Msg
+ringRemoval model player ( coordinate, occupant ) =
+    case occupant of
+        Ring player_ ->
+            if player == player_ then
+                Just (RemoveRing coordinate)
+            else
+                Nothing
+
+        _ ->
+            Nothing
 
 
 toSvg : Position -> Svg Msg
