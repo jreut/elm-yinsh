@@ -57,6 +57,16 @@ type Occupant
     | Marker Player
 
 
+isMarker : Occupant -> Bool
+isMarker occupant =
+    case occupant of
+        Marker _ ->
+            True
+
+        _ ->
+            False
+
+
 type Phase a
     = PlacingRing Int a
     | PlacingMarker a
@@ -193,16 +203,10 @@ flipMarker coordinate =
 
 removeRun : Set Hex.Coordinate -> Player -> Model -> Model
 removeRun coordinateSet currentPlayer model =
-    let
-        newBoard =
-            Set.foldl (\coordinate board -> Dict.insert coordinate Empty board) model.board coordinateSet
-    in
-        { model
-            | board =
-                newBoard
-                -- , phase = PlacingMarker (Player.update currentPlayer)
-            , phase = RemovingRing currentPlayer
-        }
+    { model
+        | board = Set.foldl (flip Dict.insert Empty) model.board coordinateSet
+        , phase = RemovingRing currentPlayer
+    }
 
 
 removeRing : Hex.Coordinate -> Model -> Model
@@ -294,7 +298,7 @@ boardConfig model =
                     ringRemoval model player
     in
         { toCoordinate = toCoordinate
-        , toMsg = \_ -> toMsg
+        , toMsg = always toMsg
         , toSvg = toSvg
         }
 
@@ -470,16 +474,7 @@ jumpCoordinate model xs =
 
 markers : Board -> Board
 markers =
-    let
-        filter _ v =
-            case v of
-                Marker _ ->
-                    True
-
-                _ ->
-                    False
-    in
-        Dict.filter filter
+    Dict.filter (always isMarker)
 
 
 markerRuns : Board -> List (List Hex.Coordinate)
@@ -490,7 +485,7 @@ markerRuns board =
 
 
 runsOfFive : Board -> List (Set Hex.Coordinate)
-runsOfFive board =
-    markerRuns board
-        |> List.filter (List.length >> ((==) 5))
-        |> List.map (Set.fromList)
+runsOfFive =
+    markerRuns
+        >> List.filter (List.length >> ((==) 5))
+        >> List.map (Set.fromList)
