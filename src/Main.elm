@@ -60,7 +60,6 @@ type Phase a
     = PlacingRing Int a
     | PlacingMarker a
     | MovingRing Hex.Coordinate a
-      -- TODO: implement removal
     | RemovingRing a
     | RemovingRun (Set Hex.Coordinate)
 
