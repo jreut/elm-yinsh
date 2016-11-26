@@ -3,6 +3,7 @@ module Main exposing (..)
 import Set exposing (Set)
 import Dict
 import List.Extra
+import Keyboard exposing (KeyCode, ups)
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Svg exposing (Svg)
@@ -26,7 +27,7 @@ main =
     Html.program
         { init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         , view = view
         }
 
@@ -87,26 +88,26 @@ type Msg
     | PlaceMarker Hex.Coordinate
     | MoveRing Hex.Coordinate Hex.Coordinate
     | RemoveRun (Set Hex.Coordinate) Player
+    | KeyUp KeyCode
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        updater =
-            case msg of
-                PlaceRing coordinate ->
-                    placeRing coordinate
+    case msg of
+        PlaceRing coordinate ->
+            placeRing coordinate model ! []
 
-                PlaceMarker coordinate ->
-                    placeMarker coordinate
+        PlaceMarker coordinate ->
+            placeMarker coordinate model ! []
 
-                MoveRing from to ->
-                    moveRing from to
+        MoveRing from to ->
+            moveRing from to model ! []
 
-                RemoveRun coordinateSet player ->
-                    removeRun coordinateSet player
-    in
-        updater model ! []
+        RemoveRun coordinateSet player ->
+            removeRun coordinateSet player model ! []
+
+        KeyUp key ->
+            onEscape key undoMarkerPlacement model ! []
 
 
 placeRing : Hex.Coordinate -> Model -> Model
@@ -193,6 +194,41 @@ removeRun coordinateSet currentPlayer model =
             Set.foldl (\coordinate board -> Dict.insert coordinate Empty board) model.board coordinateSet
     in
         { model | board = newBoard, phase = PlacingMarker (Player.update currentPlayer) }
+
+
+onEscape : KeyCode -> (Model -> Model) -> Model -> Model
+onEscape keyCode update =
+    if keyCode == 27 then
+        update
+    else
+        identity
+
+
+undoMarkerPlacement : Model -> Model
+undoMarkerPlacement model =
+    case model.phase of
+        MovingRing coordinate player ->
+            { model
+                | board = Dict.insert coordinate (Ring player) model.board
+                , phase = PlacingMarker player
+            }
+
+        _ ->
+            model
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.phase of
+        MovingRing _ _ ->
+            ups (KeyUp)
+
+        _ ->
+            Sub.none
 
 
 
