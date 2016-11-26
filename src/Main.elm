@@ -61,7 +61,7 @@ type Phase a
     | PlacingMarker a
     | MovingRing Hex.Coordinate a
     | RemovingRing a
-    | RemovingRun (Set Hex.Coordinate)
+    | RemovingRun (List (Set Hex.Coordinate))
 
 
 init : ( Model, Cmd Msg )
@@ -155,13 +155,14 @@ moveRing from to model =
             Board.line from to model.board
                 |> List.foldr flipMarker model.board
 
-        nextPhase player =
-            case runsOfFive flipped |> Debug.log "five" of
-                [] ->
-                    PlacingMarker (Player.update player)
+        runs =
+            runsOfFive flipped
 
-                x :: xs ->
-                    RemovingRun x
+        nextPhase player =
+            if List.isEmpty runs then
+                PlacingMarker (Player.update player)
+            else
+                RemovingRun runs
     in
         case model.phase of
             MovingRing _ player ->
@@ -227,8 +228,8 @@ boardConfig model =
                 MovingRing coordinate _ ->
                     ringReplacement model coordinate
 
-                RemovingRun coordinateSet ->
-                    runRemoval model coordinateSet
+                RemovingRun coordinateSets ->
+                    runRemoval model coordinateSets
 
                 _ ->
                     initialRingPlacement
@@ -287,12 +288,14 @@ ringReplacement model origin ( destination, _ ) =
         Nothing
 
 
-runRemoval : Model -> Set Hex.Coordinate -> Position -> Maybe Msg
-runRemoval model coordinateSet ( coordinate, occupant ) =
-    if Set.member coordinate coordinateSet then
-        Just (RemoveRun coordinateSet)
-    else
-        Nothing
+runRemoval : Model -> List (Set Hex.Coordinate) -> Position -> Maybe Msg
+runRemoval model coordinateSets ( coordinate, occupant ) =
+    case List.filter (Set.member coordinate) coordinateSets of
+        [] ->
+            Nothing
+
+        x :: xs ->
+            Just (RemoveRun x)
 
 
 toSvg : Position -> Svg Msg
