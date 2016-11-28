@@ -1,10 +1,8 @@
 module View.Board
     exposing
-        ( State
-        , Config
+        ( Config
         , Coordinate
         , view
-        , init
         )
 
 import Svg exposing (Svg, svg, circle, line, g)
@@ -29,30 +27,21 @@ import Svg.Attributes
 import Svg.Events exposing (onClick)
 
 
-type alias State =
-    ()
-
-
 type alias Coordinate =
     ( Float, Float )
 
 
 type alias Config data msg =
     { toCoordinate : data -> Coordinate
-    , toMsg : State -> data -> Maybe msg
+    , toMsg : data -> Maybe msg
     , toSvg : data -> Svg msg
     }
 
 
-init : State
-init =
-    ()
-
-
-view : Config data msg -> State -> List data -> Svg msg
-view config state data =
+view : Config data msg -> List data -> Svg msg
+view config data =
     data
-        |> List.map (viewPosition config state)
+        |> List.map (viewPosition config)
         |> svg
             [ viewBox "-10 -10 20 20"
             , height "100vh"
@@ -60,8 +49,8 @@ view config state data =
             ]
 
 
-viewPosition : Config data msg -> State -> data -> Svg msg
-viewPosition { toCoordinate, toMsg, toSvg } state data =
+viewPosition : Config data msg -> data -> Svg msg
+viewPosition { toCoordinate, toMsg, toSvg } data =
     let
         coordinate =
             toCoordinate data
@@ -69,7 +58,7 @@ viewPosition { toCoordinate, toMsg, toSvg } state data =
         g []
             [ viewBackground coordinate
             , toSvg data
-            , viewForeground coordinate (toMsg state data)
+            , viewForeground coordinate (toMsg data)
             ]
 
 

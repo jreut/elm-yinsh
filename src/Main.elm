@@ -38,7 +38,6 @@ main =
 
 type alias Model =
     { board : Board
-    , boardView : View.Board.State
     , phase : Phase Player
     }
 
@@ -78,7 +77,6 @@ type Phase a
 init : ( Model, Cmd Msg )
 init =
     { board = Board.init radius Empty
-    , boardView = View.Board.init
     , phase = PlacingRing 9 Player.init
     }
         ! []
@@ -270,7 +268,7 @@ view model =
     let
         svg =
             Board.positions model.board
-                |> View.Board.view (boardConfig model) model.boardView
+                |> View.Board.view (boardConfig model)
     in
         Html.main_
             [ style [ ( "background-color", "lightblue" ) ] ]
@@ -298,7 +296,7 @@ boardConfig model =
                     ringRemoval model player
     in
         { toCoordinate = toCoordinate
-        , toMsg = always toMsg
+        , toMsg = toMsg
         , toSvg = toSvg
         }
 
