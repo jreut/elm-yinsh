@@ -39,6 +39,7 @@ main =
 type alias Model =
     { board : Board
     , phase : Phase Player
+    , player : Player
     }
 
 
@@ -67,7 +68,7 @@ isMarker occupant =
 
 
 type Phase a
-    = PlacingRing Int a
+    = PlacingRing Int
     | PlacingMarker a
     | MovingRing Hex.Coordinate a
     | RemovingRing a
@@ -77,9 +78,20 @@ type Phase a
 init : ( Model, Cmd Msg )
 init =
     { board = Board.init radius Empty
-    , phase = PlacingRing 9 Player.init
+    , phase = PlacingRing 9
+    , player = Player.init
     }
         ! []
+
+
+nextPlayer : Model -> Model
+nextPlayer model =
+    { model | player = Player.update model.player }
+
+
+insert : Hex.Coordinate -> Occupant -> Model -> Model
+insert coordinate occupant model =
+    { model | board = Dict.insert coordinate occupant model.board }
 
 
 radius : Float
@@ -125,24 +137,22 @@ update msg model =
 placeRing : Hex.Coordinate -> Model -> Model
 placeRing coordinate model =
     let
-        placeRing_ player model =
-            { model | board = Dict.insert coordinate (Ring player) model.board }
-
-        nextPhase remaining player model =
+        nextPhase remaining model =
             let
                 phase =
                     if remaining == 0 then
-                        PlacingMarker (Player.update player)
+                        PlacingMarker model.player
                     else
-                        PlacingRing (remaining - 1) (Player.update player)
+                        PlacingRing (remaining - 1)
             in
                 { model | phase = phase }
     in
         case model.phase of
-            PlacingRing remaining player ->
+            PlacingRing remaining ->
                 model
-                    |> placeRing_ player
-                    |> nextPhase remaining player
+                    |> insert coordinate (Ring model.player)
+                    |> nextPlayer
+                    |> nextPhase remaining
 
             _ ->
                 model
@@ -280,7 +290,7 @@ boardConfig model =
     let
         toMsg =
             case model.phase of
-                PlacingRing _ _ ->
+                PlacingRing _ ->
                     initialRingPlacement
 
                 PlacingMarker player ->
