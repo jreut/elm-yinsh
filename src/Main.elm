@@ -19,7 +19,7 @@ import Svg.Attributes
 import Board
 import Player exposing (Player)
 import Coordinate.Hexagonal as Hex
-import Board.View
+import View.Board
 
 
 main : Program Never Model Msg
@@ -38,7 +38,7 @@ main =
 
 type alias Model =
     { board : Board
-    , boardView : Board.View.State
+    , boardView : View.Board.State
     , phase : Phase Player
     }
 
@@ -78,7 +78,7 @@ type Phase a
 init : ( Model, Cmd Msg )
 init =
     { board = Board.init radius Empty
-    , boardView = Board.View.init
+    , boardView = View.Board.init
     , phase = PlacingRing 9 Player.init
     }
         ! []
@@ -270,14 +270,14 @@ view model =
     let
         svg =
             Board.positions model.board
-                |> Board.View.view (boardConfig model) model.boardView
+                |> View.Board.view (boardConfig model) model.boardView
     in
         Html.main_
             [ style [ ( "background-color", "lightblue" ) ] ]
             [ svg ]
 
 
-boardConfig : Model -> Board.View.Config Position Msg
+boardConfig : Model -> View.Board.Config Position Msg
 boardConfig model =
     let
         toMsg =
@@ -303,7 +303,7 @@ boardConfig model =
         }
 
 
-toCoordinate : Position -> Board.View.Coordinate
+toCoordinate : Position -> View.Board.Coordinate
 toCoordinate =
     Tuple.first >> Hex.toCartesian 2
 
