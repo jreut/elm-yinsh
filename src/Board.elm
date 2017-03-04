@@ -2,6 +2,7 @@ module Board
     exposing
         ( Model
         , Position
+        , Coordinate
         , init
         , insert
         , positions
@@ -13,9 +14,13 @@ module Board
         )
 
 import List.Extra exposing (takeWhile)
-import Coordinate.Hexagonal exposing (Coordinate, validWithin, squareOf)
+import Coordinate.Hexagonal exposing (validWithin, squareOf)
 import Direction exposing (Direction, directions, add)
 import Dict exposing (Dict)
+
+
+type alias Coordinate =
+    Coordinate.Hexagonal.Coordinate
 
 
 type alias Model a =

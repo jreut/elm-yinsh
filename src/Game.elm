@@ -1,10 +1,14 @@
 module Game
     exposing
         ( State
-        , next
         , init
         , board
+        , update
+          -- TRASH BELOW
+        , Coordinate
         , addArbitraryRing
+        , phase
+        , emptyPositions
         )
 
 import Dict
@@ -56,8 +60,8 @@ init =
         }
 
 
-next : State -> State
-next (State state) =
+nextPhase : State -> State
+nextPhase (State state) =
     case state.phase of
         InitialRingPlacement nextPhase ->
             State { state | phase = nextPhase }
@@ -72,7 +76,32 @@ board (State { board }) =
 
 
 
+-- UPDATE
+
+
+update : Coordinate -> State -> State
+update coordinate (State state) =
+    case state.phase of
+        InitialRingPlacement _ ->
+            State state
+                |> placeRing coordinate Player.init
+                |> nextPhase
+
+        End ->
+            State state
+
+
+placeRing : Coordinate -> Player -> State -> State
+placeRing coordinate player (State state) =
+    State { state | board = Board.insert coordinate (Occupant.from (ring player)) state.board }
+
+
+
 -- TRASH
+
+
+type alias Coordinate =
+    Board.Coordinate
 
 
 addArbitraryRing : State -> State
@@ -88,4 +117,21 @@ addArbitraryRing (State state) =
                 State state
 
             Just k ->
-                State { state | board = Board.insert k (ring Player.init |> Occupant.from) state.board } |> next
+                State { state | board = Board.insert k (ring Player.init |> Occupant.from) state.board } |> nextPhase
+
+
+phase : State -> String
+phase (State { phase }) =
+    case phase of
+        InitialRingPlacement _ ->
+            "initial ring placement"
+
+        _ ->
+            "unknown"
+
+
+emptyPositions : State -> List Board.Coordinate
+emptyPositions (State { board }) =
+    board
+        |> Dict.filter (\k v -> v == Occupant.init)
+        |> Dict.keys
