@@ -3,6 +3,7 @@ module Board
         ( Model
         , Position
         , init
+        , insert
         , positions
         , RunFilter
         , rays
@@ -44,6 +45,11 @@ init radius initial =
         |> List.filter (validWithin radius)
         |> List.map (flip (,) initial)
         |> Dict.fromList
+
+
+insert : Coordinate -> occupant -> Model occupant -> Model occupant
+insert coordinate occupant model =
+    Dict.update coordinate (Maybe.map (always occupant)) model
 
 
 rays : Coordinate -> Model a -> List (List Coordinate)
