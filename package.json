@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "watch": "elm live --open src/Main.elm",
+    "watch": "elm live --open src/Main.elm -- --debug",
     "build": "elm make src/Main.elm"
   },
   "devDependencies": {
