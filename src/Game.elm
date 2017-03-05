@@ -9,6 +9,7 @@ module Game
         , coordinateFromMove
         )
 
+import List.Extra
 import Dict
 import Board
 import Marker exposing (Marker, disc, ring, isRing, isDisc)
@@ -18,7 +19,7 @@ import Occupant exposing (Occupant)
 
 type State
     = State
-        { actions : List (Action Player)
+        { moves : List Move
         , board : Board
         }
 
@@ -43,7 +44,7 @@ type Phase
 init : State
 init =
     State
-        { actions = []
+        { moves = []
         , board = Board.init 4.6 Occupant.init
         }
 
@@ -72,13 +73,13 @@ update (Move move) (State state) =
                 _ ->
                     identity
 
-        addAction =
-            (::) (actionFromMove (Move move))
+        addMove =
+            (::) (Move move)
     in
         State
             { state
                 | board = nextBoard state.board
-                , actions = addAction state.actions
+                , moves = addMove state.moves
             }
 
 
@@ -88,18 +89,21 @@ placeRing coordinate player board =
 
 
 availableMoves : State -> List Move
-availableMoves (State { board, actions }) =
-    case List.head actions of
+availableMoves (State { board, moves }) =
+    case List.head moves of
         Nothing ->
             initialRingPlacement Player.init board
 
-        Just action ->
+        Just (Move ( coordinate, action )) ->
             case action of
                 PlaceRing player ->
                     if ringCount board >= 10 then
                         markerPlacement (Player.next player) board
                     else
                         initialRingPlacement (Player.next player) board
+
+                PlaceMarker player ->
+                    ringMovement player coordinate board
 
                 _ ->
                     []
@@ -120,6 +124,61 @@ markerPlacement player board =
         Dict.filter (ringsForPlayer player) board
             |> Dict.keys
             |> List.map (\x -> Move ( x, PlaceMarker player ))
+
+
+ringMovement : Player -> Coordinate -> Board -> List Move
+ringMovement player origin board =
+    Board.filterRays jumpCoordinates origin board
+        |> List.concatMap identity
+        |> Set.fromList
+        |> Set.toList
+
+
+jumpCoordinates model xs =
+    let
+        ( free, rest ) =
+            List.Extra.span (isEmpty model) xs
+    in
+        case jumpCoordinate model rest of
+            Nothing ->
+                free
+
+            Just a ->
+                free ++ [ a ]
+
+
+isEmpty model coord =
+    case Dict.get coord model of
+        Nothing ->
+            False
+
+        Just occupant ->
+            case occupant of
+                Empty ->
+                    True
+
+                _ ->
+                    False
+
+
+jumpCoordinate model xs =
+    case xs of
+        [] ->
+            Nothing
+
+        y :: ys ->
+            case Dict.get y model of
+                Nothing ->
+                    Nothing
+
+                Just (Ring _) ->
+                    Nothing
+
+                Just (Marker _) ->
+                    jumpCoordinate model ys
+
+                Just Nothing ->
+                    Just y
 
 
 emptyCoordinates : Board -> List Coordinate
