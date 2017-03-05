@@ -35,7 +35,6 @@ init =
 
 type Msg
     = NoOp
-    | ClickedCoordinate Game.Coordinate
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -43,9 +42,6 @@ update msg model =
     case msg of
         NoOp ->
             model ! []
-
-        ClickedCoordinate coordinate ->
-            { model | game = Game.update coordinate model.game } ! []
 
 
 
@@ -65,15 +61,27 @@ view : Model -> Html Msg
 view model =
     Html.main_ []
         [ Html.h1 [] [ Html.text "Yinsh" ]
-        , Html.h2 [] [ Html.text (Game.phase model.game) ]
-        , Html.div []
-            (model.game
-                |> Game.emptyPositions
-                |> List.map
-                    (\x ->
-                        Html.button
-                            [ onClick (ClickedCoordinate x) ]
-                            [ x |> toString |> Html.text ]
-                    )
-            )
+        , tableOfAvailableMoves model
+        ]
+
+
+tableOfAvailableMoves : Model -> Html Msg
+tableOfAvailableMoves { game } =
+    Html.table []
+        ([ Html.thead []
+            [ Html.tr []
+                [ Html.th [] [ Html.text "(x, y)" ]
+                , Html.th [] [ Html.text "action" ]
+                ]
+            ]
+         ]
+            ++ List.map makeRowFromMove (Game.availableMoves game)
+        )
+
+
+makeRowFromMove : Game.Move -> Html Msg
+makeRowFromMove move =
+    Html.tr []
+        [ Html.td [] [ move |> Game.coordinateFromMove |> toString |> Html.text ]
+        , Html.td [] [ move |> Game.actionFromMove |> toString |> Html.text ]
         ]

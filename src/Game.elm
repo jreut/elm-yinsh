@@ -2,13 +2,10 @@ module Game
     exposing
         ( State
         , init
-        , board
-        , update
-          -- TRASH BELOW
-        , Coordinate
-        , addArbitraryRing
-        , phase
-        , emptyPositions
+        , availableMoves
+        , Move
+        , actionFromMove
+        , coordinateFromMove
         )
 
 import Dict
@@ -20,9 +17,17 @@ import Occupant exposing (Occupant)
 
 type State
     = State
-        { phase : Phase
+        { actions : List (Action Player)
         , board : Board
         }
+
+
+type Action player
+    = RemoveRing
+    | RemoveRun (List Coordinate) player
+    | PlaceMarker player
+    | PlaceRing player
+    | MoveRing Coordinate
 
 
 type alias Board =
@@ -37,37 +42,9 @@ type Phase
 init : State
 init =
     State
-        { phase =
-            InitialRingPlacement
-                (InitialRingPlacement
-                    (InitialRingPlacement
-                        (InitialRingPlacement
-                            (InitialRingPlacement
-                                (InitialRingPlacement
-                                    (InitialRingPlacement
-                                        (InitialRingPlacement
-                                            (InitialRingPlacement
-                                                (InitialRingPlacement End)
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
+        { actions = []
         , board = Board.init 4.6 Occupant.init
         }
-
-
-nextPhase : State -> State
-nextPhase (State state) =
-    case state.phase of
-        InitialRingPlacement nextPhase ->
-            State { state | phase = nextPhase }
-
-        End ->
-            init
 
 
 board : State -> Board
@@ -75,63 +52,22 @@ board (State { board }) =
     board
 
 
-
--- UPDATE
-
-
-update : Coordinate -> State -> State
-update coordinate (State state) =
-    case state.phase of
-        InitialRingPlacement _ ->
-            State state
-                |> placeRing coordinate Player.init
-                |> nextPhase
-
-        End ->
-            State state
-
-
-placeRing : Coordinate -> Player -> State -> State
-placeRing coordinate player (State state) =
-    State { state | board = Board.insert coordinate (Occupant.from (ring player)) state.board }
-
-
-
--- TRASH
-
-
 type alias Coordinate =
     Board.Coordinate
 
 
-addArbitraryRing : State -> State
-addArbitraryRing (State state) =
-    let
-        emptyKeys =
-            state.board
-                |> Dict.filter (\k v -> v == Occupant.init)
-                |> Dict.keys
-    in
-        case List.head emptyKeys of
-            Nothing ->
-                State state
-
-            Just k ->
-                State { state | board = Board.insert k (ring Player.init |> Occupant.from) state.board } |> nextPhase
+type Move
+    = Move ( Coordinate, Action Player )
 
 
-phase : State -> String
-phase (State { phase }) =
-    case phase of
-        InitialRingPlacement _ ->
-            "initial ring placement"
-
-        _ ->
-            "unknown"
+availableMoves : State -> List Move
+availableMoves _ =
+    [ Move ( ( 0, 1 ), PlaceRing Player.init ) ]
 
 
-emptyPositions : State -> List Board.Coordinate
-emptyPositions (State { board }) =
-    board
-        |> Dict.filter (\k v -> v == Occupant.init)
-        |> Dict.keys
+actionFromMove (Move ( _, action )) =
+    action
+
+
+coordinateFromMove (Move ( coordinate, _ )) =
+    coordinate
