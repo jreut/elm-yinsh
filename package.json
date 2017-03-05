@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "watch": "elm live --open src/Main.elm",
+    "build": "elm make src/Main.elm"
+  },
+  "devDependencies": {
+    "elm": "0.18.0",
+    "elm-live": "^2.7.4"
+  }
+}
