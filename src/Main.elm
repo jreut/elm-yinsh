@@ -5,6 +5,7 @@ import Svg exposing (Svg)
 import Board
 import View.Board
 import Coordinate.Hexagonal exposing (toCartesian)
+import Game
 
 
 main : Program Never Model Msg
@@ -22,12 +23,12 @@ main =
 
 
 type alias Model =
-    ()
+    { game : Game.State }
 
 
 init : ( Model, Cmd Msg )
 init =
-    () ! []
+    { game = Game.init } ! []
 
 
 
@@ -47,7 +48,7 @@ board : Model -> Html Msg
 board model =
     let
         data =
-            Board.toList Board.empty
+            Board.toList <| Game.foldl model.game
 
         config =
             View.Board.config toCoordinate toMsg toSvg
@@ -62,7 +63,7 @@ toCoordinate =
 
 toMsg : Board.Position -> Maybe Msg
 toMsg =
-    Just << always NoOp
+    Just << Clicked
 
 
 toSvg : Board.Position -> Svg Msg
@@ -98,8 +99,14 @@ subscriptions =
 
 type Msg
     = NoOp
+    | Clicked Board.Position
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    model ! []
+    case (Debug.log "msg" msg) of
+        NoOp ->
+            model ! []
+
+        Clicked position ->
+            { model | game = Game.click position model.game } ! []

@@ -6,6 +6,8 @@ module Board
         , toList
         , coordinate
         , occupant
+        , insert
+        , ringAt
         )
 
 import Dict exposing (Dict)
@@ -66,3 +68,13 @@ coordinate (Position ( coordinate, _ )) =
 occupant : Position -> Occupant Player
 occupant (Position ( _, occupant )) =
     occupant
+
+
+insert : Coordinate -> Occupant Player -> Board -> Board
+insert coordinate occupant (Board board) =
+    Dict.insert coordinate occupant board |> Board
+
+
+ringAt : Coordinate -> Player -> Board -> Board
+ringAt coordinate player =
+    insert coordinate (Occupant.ring player)
