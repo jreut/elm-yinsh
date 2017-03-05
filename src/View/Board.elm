@@ -1,6 +1,7 @@
 module View.Board
     exposing
         ( Config
+        , config
         , Coordinate
         , view
         )
@@ -31,11 +32,21 @@ type alias Coordinate =
     ( Float, Float )
 
 
-type alias Config data msg =
-    { toCoordinate : data -> Coordinate
-    , toMsg : data -> Maybe msg
-    , toSvg : data -> Svg msg
-    }
+type Config data msg
+    = Config
+        { toCoordinate : data -> Coordinate
+        , toMsg : data -> Maybe msg
+        , toSvg : data -> Svg msg
+        }
+
+
+config : (data -> Coordinate) -> (data -> Maybe msg) -> (data -> Svg msg) -> Config data msg
+config toCoordinate toMsg toSvg =
+    Config
+        { toCoordinate = toCoordinate
+        , toMsg = toMsg
+        , toSvg = toSvg
+        }
 
 
 view : Config data msg -> List data -> Svg msg
@@ -50,7 +61,7 @@ view config data =
 
 
 viewPosition : Config data msg -> data -> Svg msg
-viewPosition { toCoordinate, toMsg, toSvg } data =
+viewPosition (Config { toCoordinate, toMsg, toSvg }) data =
     let
         coordinate =
             toCoordinate data

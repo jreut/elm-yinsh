@@ -1,7 +1,7 @@
 module Coordinate.Hexagonal
     exposing
         ( Coordinate
-        , validWithin
+        , maybeValid
         , squareOf
         , toCartesian
         , toString
@@ -19,6 +19,14 @@ squareOf radius =
             List.range (negate radius) radius
     in
         List.concatMap (\x -> List.map ((,) x) range) range
+
+
+maybeValid : Float -> Coordinate -> Maybe Coordinate
+maybeValid radius coordinate =
+    if validWithin radius coordinate then
+        Just coordinate
+    else
+        Nothing
 
 
 validWithin : Float -> Coordinate -> Bool

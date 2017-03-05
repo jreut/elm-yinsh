@@ -1,9 +1,9 @@
 module Player
     exposing
         ( Player
-        , init
-        , update
-        , view
+        , white
+        , black
+        , next
         )
 
 
@@ -12,26 +12,21 @@ type Player
     | Black
 
 
-init : Player
-init =
+white : Player
+white =
     White
 
 
-update : Player -> Player
-update player =
+black : Player
+black =
+    Black
+
+
+next : Player -> Player
+next player =
     case player of
         White ->
             Black
 
         Black ->
             White
-
-
-view : Player -> String
-view player =
-    case player of
-        Black ->
-            "black"
-
-        White ->
-            "white"

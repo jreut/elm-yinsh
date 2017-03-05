@@ -1,143 +1,68 @@
 module Board
     exposing
-        ( Model
+        ( Board
         , Position
-        , init
-        , positions
-        , RunFilter
-        , rays
-        , filterRays
-        , line
-        , contiguousLines
+        , empty
+        , toList
+        , coordinate
+        , occupant
         )
 
-import List.Extra exposing (takeWhile)
-import Coordinate.Hexagonal exposing (Coordinate, validWithin, squareOf)
-import Direction exposing (Direction, directions, add)
 import Dict exposing (Dict)
+import Occupant exposing (Occupant)
+import Player exposing (Player)
+import Coordinate.Hexagonal
+    exposing
+        ( Coordinate
+        , maybeValid
+        , squareOf
+        )
 
 
-type alias Model a =
-    Dict Coordinate a
+type Board
+    = Board (Dict Coordinate (Occupant Player))
 
 
-type alias Position a =
-    ( Coordinate, a )
+type Position
+    = Position ( Coordinate, Occupant Player )
 
 
-positions : Model a -> List (Position a)
-positions =
-    Dict.toList
+fromList : List ( Coordinate, Occupant Player ) -> Board
+fromList =
+    Board << Dict.fromList
 
 
-type alias Run =
-    List Coordinate
+fromDict : Dict Coordinate (Occupant Player) -> Board
+fromDict =
+    Board
 
 
-type alias RunFilter a =
-    Model a -> Run -> Run
-
-
-init : Float -> a -> Model a
-init radius initial =
-    squareOf (ceiling radius)
-        |> List.filter (validWithin radius)
-        |> List.map (flip (,) initial)
-        |> Dict.fromList
-
-
-rays : Coordinate -> Model a -> List (List Coordinate)
-rays =
-    filterRays (always identity)
-
-
-filterRays : RunFilter a -> Coordinate -> Model a -> List (List Coordinate)
-filterRays filter origin model =
-    directions
-        |> List.map (ray origin [] model)
-        |> List.map List.reverse
-        |> List.map (filter model)
-
-
-ray : Coordinate -> Run -> Model a -> Direction -> Run
-ray origin acc model direction =
+empty : Board
+empty =
     let
-        next =
-            add direction origin
+        makePair : Coordinate -> Maybe ( Coordinate, Occupant Player )
+        makePair =
+            Maybe.map (flip (,) Occupant.empty) << maybeValid radius
+
+        radius =
+            4.6
     in
-        case Dict.get next model of
-            Nothing ->
-                acc
-
-            Just _ ->
-                ray next (next :: acc) model direction
+        squareOf (ceiling radius)
+            |> List.filterMap makePair
+            |> fromList
 
 
-rayWithOrigin : Coordinate -> Run -> Model a -> Direction -> Run
-rayWithOrigin origin acc model direction =
-    let
-        next =
-            add direction origin
-    in
-        case Dict.get next model of
-            Nothing ->
-                origin :: acc
-
-            Just _ ->
-                rayWithOrigin next (origin :: acc) model direction
+toList : Board -> List Position
+toList (Board board) =
+    Dict.toList board
+        |> List.map Position
 
 
-line : Coordinate -> Coordinate -> Model a -> Run
-line origin destination =
-    runTo origin destination []
+coordinate : Position -> Coordinate
+coordinate (Position ( coordinate, _ )) =
+    coordinate
 
 
-runTo : Coordinate -> Coordinate -> Run -> Model a -> Run
-runTo origin destination acc model =
-    List.concatMap
-        (tryRun origin destination [] model)
-        directions
-
-
-tryRun : Coordinate -> Coordinate -> Run -> Model a -> Direction -> Run
-tryRun origin destination acc model direction =
-    let
-        next =
-            add direction origin
-    in
-        if next == destination then
-            next :: acc
-        else
-            case Dict.get next model of
-                Nothing ->
-                    []
-
-                Just _ ->
-                    tryRun next destination (next :: acc) model direction
-
-
-contiguousLines : Coordinate -> Model a -> List Run
-contiguousLines origin model =
-    directions
-        |> List.map (\dir -> contiguousLine origin dir model)
-
-
-contiguousLine : Coordinate -> Direction -> Model a -> Run
-contiguousLine origin direction model =
-    let
-        isHead head coordinate =
-            case Dict.get coordinate model of
-                Nothing ->
-                    False
-
-                Just occupant ->
-                    occupant == head
-    in
-        case Dict.get origin model of
-            Nothing ->
-                []
-
-            Just head ->
-                rayWithOrigin origin [] model direction
-                    |> List.reverse
-                    |> takeWhile (isHead head)
+occupant : Position -> Occupant Player
+occupant (Position ( _, occupant )) =
+    occupant
