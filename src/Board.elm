@@ -8,6 +8,7 @@ module Board
         , occupant
         , insert
         , ringAt
+        , isEmpty
         )
 
 import Dict exposing (Dict)
@@ -78,3 +79,8 @@ insert coordinate occupant (Board board) =
 ringAt : Coordinate -> Player -> Board -> Board
 ringAt coordinate player =
     insert coordinate (Occupant.ring player)
+
+
+isEmpty : Coordinate -> Board -> Bool
+isEmpty coordinate (Board board) =
+    Dict.get coordinate board |> Maybe.map Occupant.isEmpty |> Maybe.withDefault True
