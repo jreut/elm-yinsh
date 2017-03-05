@@ -3,6 +3,7 @@ module Game
         ( State
         , Move
         , init
+        , update
         , availableMoves
         , actionFromMove
         , coordinateFromMove
@@ -58,6 +59,21 @@ type alias Coordinate =
 
 type Move
     = Move ( Coordinate, Action Player )
+
+
+update : Move -> State -> State
+update (Move move) (State state) =
+    case move of
+        ( coord, PlaceRing player ) ->
+            State { state | board = placeRing coord player state.board }
+
+        _ ->
+            State state
+
+
+placeRing : Coordinate -> Player -> Board -> Board
+placeRing coordinate player board =
+    Board.insert coordinate (Occupant.from (disc player)) board
 
 
 availableMoves : State -> List Move

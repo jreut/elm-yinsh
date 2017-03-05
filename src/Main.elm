@@ -33,15 +33,13 @@ init =
 -- UPDATE
 
 
-type Msg
-    = NoOp
+type alias Msg =
+    Game.Move
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        NoOp ->
-            model ! []
+    { model | game = Game.update msg model.game } ! []
 
 
 
@@ -72,6 +70,7 @@ tableOfAvailableMoves { game } =
             [ Html.tr []
                 [ Html.th [] [ Html.text "(x, y)" ]
                 , Html.th [] [ Html.text "action" ]
+                , Html.th [] [ Html.text "do it" ]
                 ]
             ]
          ]
@@ -84,4 +83,7 @@ makeRowFromMove move =
     Html.tr []
         [ Html.td [] [ move |> Game.coordinateFromMove |> toString |> Html.text ]
         , Html.td [] [ move |> Game.actionFromMove |> toString |> Html.text ]
+        , Html.td []
+            [ Html.button [ onClick move ] []
+            ]
         ]
