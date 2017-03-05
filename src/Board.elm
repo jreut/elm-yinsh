@@ -23,19 +23,19 @@ import Coordinate.Hexagonal
 
 
 type Board
-    = Board (Dict Coordinate (Occupant Player))
+    = Board (Dict Coordinate Occupant)
 
 
 type Position
-    = Position ( Coordinate, Occupant Player )
+    = Position ( Coordinate, Occupant )
 
 
-fromList : List ( Coordinate, Occupant Player ) -> Board
+fromList : List ( Coordinate, Occupant ) -> Board
 fromList =
     Board << Dict.fromList
 
 
-fromDict : Dict Coordinate (Occupant Player) -> Board
+fromDict : Dict Coordinate Occupant -> Board
 fromDict =
     Board
 
@@ -43,7 +43,7 @@ fromDict =
 empty : Board
 empty =
     let
-        makePair : Coordinate -> Maybe ( Coordinate, Occupant Player )
+        makePair : Coordinate -> Maybe ( Coordinate, Occupant )
         makePair =
             Maybe.map (flip (,) Occupant.empty) << maybeValid radius
 
@@ -66,12 +66,12 @@ coordinate (Position ( coordinate, _ )) =
     coordinate
 
 
-occupant : Position -> Occupant Player
+occupant : Position -> Occupant
 occupant (Position ( _, occupant )) =
     occupant
 
 
-insert : Coordinate -> Occupant Player -> Board -> Board
+insert : Coordinate -> Occupant -> Board -> Board
 insert coordinate occupant (Board board) =
     Dict.insert coordinate occupant board |> Board
 

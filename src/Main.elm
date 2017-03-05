@@ -1,9 +1,12 @@
 module Main exposing (main)
 
 import Html exposing (Html)
+import Html.Attributes
 import Svg exposing (Svg)
+import Svg.Attributes
 import Board
 import View.Board
+import View.Marker
 import Coordinate.Hexagonal exposing (toCartesian)
 import Game
 
@@ -37,7 +40,9 @@ init =
 
 view : Model -> Html Msg
 view model =
-    Html.main_ []
+    Html.main_
+        [ Html.Attributes.style [ ( "background-color", "lightblue" ) ]
+        ]
         [ title
         , board model
         , footer
@@ -67,8 +72,9 @@ toMsg =
 
 
 toSvg : Board.Position -> Svg Msg
-toSvg =
-    Svg.text << toString
+toSvg position =
+    View.Marker.toSvg (Board.coordinate position) (Board.occupant position)
+        |> Svg.map never
 
 
 title : Html Msg

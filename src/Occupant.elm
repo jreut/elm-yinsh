@@ -1,34 +1,37 @@
 module Occupant
     exposing
-        ( Occupant
+    -- TODO: try not to export these constructors
+        ( Occupant(..)
         , empty
         , ring
         , disc
         , isEmpty
         )
 
+import Player exposing (Player)
 
-type Occupant player
-    = Ring player
-    | Disc player
+
+type Occupant
+    = Ring Player
+    | Disc Player
     | Empty
 
 
-empty : Occupant player
+empty : Occupant
 empty =
     Empty
 
 
-ring : player -> Occupant player
+ring : Player -> Occupant
 ring =
     Ring
 
 
-disc : player -> Occupant player
+disc : Player -> Occupant
 disc =
     Disc
 
 
-isEmpty : Occupant player -> Bool
+isEmpty : Occupant -> Bool
 isEmpty =
     (==) Empty

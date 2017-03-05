@@ -4,6 +4,7 @@ module Player
         , white
         , black
         , next
+        , toColor
         )
 
 
@@ -30,3 +31,13 @@ next player =
 
         Black ->
             White
+
+
+toColor : Player -> String
+toColor player =
+    case player of
+        White ->
+            "white"
+
+        Black ->
+            "black"
