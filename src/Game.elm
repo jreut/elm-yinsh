@@ -63,12 +63,23 @@ type Move
 
 update : Move -> State -> State
 update (Move move) (State state) =
-    case move of
-        ( coord, PlaceRing player ) ->
-            State { state | board = placeRing coord player state.board }
+    let
+        nextBoard =
+            case move of
+                ( coord, PlaceRing player ) ->
+                    placeRing coord player
 
-        _ ->
-            State state
+                _ ->
+                    identity
+
+        addAction =
+            (::) (actionFromMove (Move move))
+    in
+        State
+            { state
+                | board = nextBoard state.board
+                , actions = addAction state.actions
+            }
 
 
 placeRing : Coordinate -> Player -> Board -> Board
