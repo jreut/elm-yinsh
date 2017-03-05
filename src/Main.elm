@@ -53,7 +53,7 @@ board : Model -> Html Msg
 board model =
     let
         data =
-            Board.toList <| Game.foldl model.game
+            Board.toList <| Game.fold model.game
 
         config =
             View.Board.config toCoordinate toMsg toSvg

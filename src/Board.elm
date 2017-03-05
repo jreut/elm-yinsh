@@ -8,9 +8,13 @@ module Board
         , occupant
         , insert
         , ringAt
+        , discAt
         , isEmpty
+        , get
+        , getRingForPlayer
         )
 
+import Maybe.Extra
 import Dict exposing (Dict)
 import Occupant exposing (Occupant)
 import Player exposing (Player)
@@ -76,9 +80,32 @@ insert coordinate occupant (Board board) =
     Dict.insert coordinate occupant board |> Board
 
 
+get : Coordinate -> Board -> Maybe Occupant
+get coordinate (Board board) =
+    Dict.get coordinate board
+
+
+getRingForPlayer : Player -> Coordinate -> Board -> Maybe Occupant
+getRingForPlayer player coordinate (Board board) =
+    Dict.get coordinate board
+        |> Maybe.map
+            (\occupant ->
+                if Occupant.isRing occupant && Occupant.toPlayer occupant == Just player then
+                    Just occupant
+                else
+                    Nothing
+            )
+        |> Maybe.Extra.join
+
+
 ringAt : Coordinate -> Player -> Board -> Board
 ringAt coordinate player =
     insert coordinate (Occupant.ring player)
+
+
+discAt : Coordinate -> Player -> Board -> Board
+discAt coordinate player =
+    insert coordinate (Occupant.disc player)
 
 
 isEmpty : Coordinate -> Board -> Bool

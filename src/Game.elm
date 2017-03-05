@@ -3,7 +3,7 @@ module Game
         ( State
         , click
         , init
-        , foldl
+        , fold
         )
 
 import List.Extra
@@ -21,6 +21,7 @@ type State
 
 type Move
     = PlaceRing Player Coordinate
+    | PlaceDisc Player Coordinate
 
 
 type alias Rule =
@@ -31,6 +32,7 @@ rules : List Rule
 rules =
     [ firstMove
     , ringPlacement
+    , discPlacement
     ]
 
 
@@ -46,7 +48,7 @@ ringPlacement : Rule
 ringPlacement coordinate (State { moves }) =
     let
         board =
-            foldl (State { moves = moves })
+            fold (State { moves = moves })
 
         predicates =
             [ List.length moves < 10
@@ -62,6 +64,37 @@ ringPlacement coordinate (State { moves }) =
                     Nothing
         else
             Nothing
+
+
+discPlacement : Rule
+discPlacement coordinate (State { moves }) =
+    let
+        nextPlayer =
+            playerOfLastDiscPlacement moves
+
+        playerOfLastDiscPlacement : List Move -> Player
+        playerOfLastDiscPlacement moves =
+            case lastDiscPlacement moves of
+                Just (PlaceDisc player _) ->
+                    Player.next player
+
+                _ ->
+                    Player.white
+
+        lastDiscPlacement : List Move -> Maybe Move
+        lastDiscPlacement =
+            List.Extra.find
+                (\move ->
+                    case move of
+                        PlaceDisc _ _ ->
+                            True
+
+                        _ ->
+                            False
+                )
+    in
+        Board.getRingForPlayer nextPlayer coordinate (board moves)
+            |> Maybe.map (\_ -> PlaceDisc nextPlayer coordinate)
 
 
 init : State
@@ -93,13 +126,21 @@ click position state =
                 addMove move state
 
 
-foldl : State -> Board
-foldl (State { moves }) =
+fold : State -> Board
+fold (State { moves }) =
     let
         foldMove : Move -> Board -> Board
         foldMove move =
             case move of
                 PlaceRing player coordinate ->
                     Board.ringAt coordinate player
+
+                PlaceDisc player coordinate ->
+                    Board.discAt coordinate player
     in
-        List.foldl foldMove Board.empty moves
+        List.foldr foldMove Board.empty moves
+
+
+board : List Move -> Board
+board moves =
+    fold (State { moves = moves })
