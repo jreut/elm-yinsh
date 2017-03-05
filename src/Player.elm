@@ -2,7 +2,7 @@ module Player
     exposing
         ( Player
         , init
-        , update
+        , next
         , view
         )
 
@@ -17,8 +17,8 @@ init =
     White
 
 
-update : Player -> Player
-update player =
+next : Player -> Player
+next player =
     case player of
         White ->
             Black

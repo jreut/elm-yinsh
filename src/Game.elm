@@ -1,9 +1,9 @@
 module Game
     exposing
         ( State
+        , Move
         , init
         , availableMoves
-        , Move
         , actionFromMove
         , coordinateFromMove
         )
@@ -61,8 +61,28 @@ type Move
 
 
 availableMoves : State -> List Move
-availableMoves _ =
-    [ Move ( ( 0, 1 ), PlaceRing Player.init ) ]
+availableMoves (State { board, actions }) =
+    case List.head actions of
+        Nothing ->
+            initialRingPlacement Player.init board
+
+        Just action ->
+            case action of
+                PlaceRing player ->
+                    initialRingPlacement (Player.next player) board
+
+                _ ->
+                    []
+
+
+initialRingPlacement : Player -> Board -> List Move
+initialRingPlacement player board =
+    emptyCoordinates board |> List.map (\x -> Move ( x, PlaceRing player ))
+
+
+emptyCoordinates : Board -> List Coordinate
+emptyCoordinates =
+    Dict.keys << Dict.filter (always ((==) Occupant.init))
 
 
 actionFromMove (Move ( _, action )) =
