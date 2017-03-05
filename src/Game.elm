@@ -11,7 +11,7 @@ module Game
 
 import Dict
 import Board
-import Marker exposing (Marker, disc, ring)
+import Marker exposing (Marker, disc, ring, isRing, isDisc)
 import Player exposing (Player)
 import Occupant exposing (Occupant)
 
@@ -84,7 +84,7 @@ update (Move move) (State state) =
 
 placeRing : Coordinate -> Player -> Board -> Board
 placeRing coordinate player board =
-    Board.insert coordinate (Occupant.from (disc player)) board
+    Board.insert coordinate (Occupant.lift (ring player)) board
 
 
 availableMoves : State -> List Move
@@ -96,7 +96,10 @@ availableMoves (State { board, actions }) =
         Just action ->
             case action of
                 PlaceRing player ->
-                    initialRingPlacement (Player.next player) board
+                    if ringCount board >= 10 then
+                        markerPlacement (Player.next player) board
+                    else
+                        initialRingPlacement (Player.next player) board
 
                 _ ->
                     []
@@ -107,9 +110,26 @@ initialRingPlacement player board =
     emptyCoordinates board |> List.map (\x -> Move ( x, PlaceRing player ))
 
 
+markerPlacement : Player -> Board -> List Move
+markerPlacement player board =
+    let
+        ringsForPlayer : Player -> Board.Coordinate -> Occupant (Marker Player) -> Bool
+        ringsForPlayer =
+            (\player k v -> v == Occupant.lift (ring player))
+    in
+        Dict.filter (ringsForPlayer player) board
+            |> Dict.keys
+            |> List.map (\x -> Move ( x, PlaceMarker player ))
+
+
 emptyCoordinates : Board -> List Coordinate
 emptyCoordinates =
     Dict.keys << Dict.filter (always ((==) Occupant.init))
+
+
+ringCount : Board -> Int
+ringCount board =
+    Dict.filter (\k o -> Occupant.fold o |> Maybe.map (isRing) |> Maybe.withDefault False) board |> Dict.size
 
 
 actionFromMove (Move ( _, action )) =

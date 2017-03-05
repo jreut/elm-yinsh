@@ -1,4 +1,4 @@
-module Occupant exposing (Occupant, init, from)
+module Occupant exposing (Occupant, init, lift, fold)
 
 
 type Occupant marker
@@ -10,6 +10,11 @@ init =
     Occupant (Nothing)
 
 
-from : marker -> Occupant marker
-from marker =
+lift : marker -> Occupant marker
+lift marker =
     Occupant (Just marker)
+
+
+fold : Occupant marker -> Maybe marker
+fold (Occupant occupant) =
+    occupant
