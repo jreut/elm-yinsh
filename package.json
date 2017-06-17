@@ -4,7 +4,7 @@
     "build": "elm make src/Main.elm"
   },
   "devDependencies": {
-    "elm": "0.18.0",
+    "elm": "^0.18.0",
     "elm-live": "^2.7.4"
   }
 }
