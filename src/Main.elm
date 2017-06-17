@@ -2,6 +2,8 @@ module Main exposing (main)
 
 import Html exposing (Html)
 import Board exposing (Board)
+import View.Board as BoardView
+import Svg
 
 
 main : Program Never Model Msg
@@ -50,14 +52,14 @@ type alias Model =
 view : Model -> Html Msg
 view { board } =
     let
-        fromTuple ( x, y, maybeOccupant ) =
-            Html.div []
-                [ Html.strong [] [ Html.text (toString ( x, y )) ]
-                , Html.text (toString maybeOccupant)
-                ]
+        config =
+            BoardView.config
+                (\data -> Svg.text ("toSvg: " ++ (toString data)))
+                (\data -> ( 42, 42 ))
     in
-        Board.view board
-            |> List.map fromTuple
+        BoardView.view config (Board.view board)
+            |> Svg.map (always NoOp)
+            |> List.singleton
             |> Html.div []
 
 
