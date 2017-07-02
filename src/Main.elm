@@ -3,7 +3,8 @@ module Main exposing (main)
 import Html exposing (Html)
 import Board exposing (Board)
 import View.Board as BoardView
-import Svg
+import Svg exposing (Svg)
+import Svg.Attributes
 
 
 main : Program Never Model Msg
@@ -53,12 +54,15 @@ view : Model -> Html Msg
 view { board } =
     let
         config =
-            BoardView.config
-                (\data -> Svg.text ("toSvg: " ++ (toString data)))
-                (\( x, y, _ ) -> ( toFloat x, toFloat y ))
+            BoardView.toSvg viewOccupant
     in
         BoardView.view config (Board.view board)
             |> Html.map (always NoOp)
+
+
+viewOccupant : datum -> Svg Never
+viewOccupant =
+    Svg.g [] << List.singleton << Svg.text << toString
 
 
 
