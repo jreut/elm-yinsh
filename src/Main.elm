@@ -6,7 +6,10 @@ import Svg exposing (Svg)
 import Svg.Attributes
 import Board exposing (Board)
 import View.Board as BoardView
+import View.Occupant as OccupantView
 import Coordinate.Hexagonal exposing (toCartesian)
+import Player exposing (Player(..))
+import Marker exposing (Marker(..))
 
 
 main : Program Never Model Msg
@@ -40,16 +43,6 @@ init =
 --- MODEL
 
 
-type Player
-    = Black
-    | White
-
-
-type Marker
-    = Ring
-    | Disc
-
-
 type alias Model =
     { board : Board Player Marker }
 
@@ -62,7 +55,7 @@ view : Model -> Html Msg
 view { board } =
     let
         config =
-            BoardView.toSvg (Svg.g [] << List.singleton << viewOccupant)
+            BoardView.toSvg (Svg.g [] << List.singleton << OccupantView.view)
     in
         BoardView.view config (Board.view board)
             |> Html.map (always NoOp)
@@ -74,68 +67,6 @@ view { board } =
                       )
                     ]
                 ]
-
-
-viewOccupant : ( Int, Int, Maybe ( Player, Marker ) ) -> Svg Never
-viewOccupant ( x, y, occupant ) =
-    let
-        cartesian : ( Float, Float )
-        cartesian =
-            toCartesian 1 ( x, y )
-
-        toCoordinate : Int -> String
-        toCoordinate =
-            toString << toFloat
-
-        baseAttrs : List (Svg.Attribute Never)
-        baseAttrs =
-            let
-                ( x, y ) =
-                    cartesian
-            in
-                [ Svg.Attributes.cx (toString x)
-                , Svg.Attributes.cy (toString y)
-                ]
-
-        emptyAttrs : List (Svg.Attribute Never)
-        emptyAttrs =
-            [ Svg.Attributes.r "1%", Svg.Attributes.fill "grey" ]
-
-        ringAttrs : String -> List (Svg.Attribute Never)
-        ringAttrs color =
-            [ Svg.Attributes.r "4%"
-            , Svg.Attributes.fill "none"
-            , Svg.Attributes.stroke color
-            , Svg.Attributes.strokeWidth "1%"
-            ]
-
-        discAttrs : String -> List (Svg.Attribute Never)
-        discAttrs color =
-            [ Svg.Attributes.r "3%", Svg.Attributes.fill color ]
-
-        makeCircle : List (Svg.Attribute Never) -> Svg Never
-        makeCircle attrs =
-            Svg.circle (baseAttrs ++ attrs) []
-    in
-        case occupant of
-            Nothing ->
-                makeCircle emptyAttrs
-
-            Just ( player, marker ) ->
-                let
-                    makeAttrs =
-                        case marker of
-                            Disc ->
-                                discAttrs
-
-                            Ring ->
-                                ringAttrs
-                in
-                    player
-                        |> toString
-                        |> String.toLower
-                        |> makeAttrs
-                        |> makeCircle
 
 
 
