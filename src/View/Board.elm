@@ -4,16 +4,8 @@ module View.Board
         , toSvg
         )
 
-import Svg exposing (Svg)
-import Svg.Attributes
-    exposing
-        ( cx
-        , cy
-        , r
-        , viewBox
-        , width
-        , height
-        )
+import Svg exposing (Svg, svg)
+import Svg.Attributes exposing (viewBox, width, height)
 import Html exposing (Html)
 
 
@@ -30,4 +22,10 @@ view : Config datum -> List datum -> Html Never
 view config data =
     case config of
         JustSvg toSvg ->
-            data |> List.map toSvg |> Svg.svg []
+            data
+                |> List.map toSvg
+                |> svg
+                    [ viewBox "-6 -6 12 12"
+                    , height "100vh"
+                    , width "100vw"
+                    ]
