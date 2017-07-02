@@ -55,12 +55,10 @@ view { board } =
         config =
             BoardView.config
                 (\data -> Svg.text ("toSvg: " ++ (toString data)))
-                (\data -> ( 42, 42 ))
+                (\( x, y, _ ) -> ( toFloat x, toFloat y ))
     in
         BoardView.view config (Board.view board)
-            |> Svg.map (always NoOp)
-            |> List.singleton
-            |> Html.div []
+            |> Html.map (always NoOp)
 
 
 
