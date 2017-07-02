@@ -7,18 +7,18 @@ module View.Board
 import Svg exposing (Svg)
 
 
-type Config data
+type Config datum
     = Config
-        { toSvg : data -> Svg Never
-        , toCoordinate : data -> ( Float, Float )
+        { toSvg : datum -> Svg Never
+        , toCoordinate : datum -> ( Float, Float )
         }
 
 
-config : (data -> Svg Never) -> (data -> ( Float, Float )) -> Config data
+config : (datum -> Svg Never) -> (datum -> ( Float, Float )) -> Config datum
 config toSvg toCoordinate =
     Config { toSvg = toSvg, toCoordinate = toCoordinate }
 
 
-view : Config data -> List data -> Svg Never
+view : Config datum -> List datum -> Svg Never
 view config data =
-    Svg.text "hello, SVG"
+    Svg.text (toString data)
