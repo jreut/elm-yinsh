@@ -3,11 +3,9 @@ module Main exposing (main)
 import Html exposing (Html)
 import Html.Attributes
 import Svg exposing (Svg)
-import Svg.Attributes
 import Board exposing (Board)
 import View.Board as BoardView
 import View.Occupant as OccupantView
-import Coordinate.Hexagonal exposing (toCartesian)
 import Player exposing (Player(..))
 import Marker exposing (Marker(..))
 
@@ -55,10 +53,11 @@ view : Model -> Html Msg
 view { board } =
     let
         config =
-            BoardView.toSvg (Svg.g [] << List.singleton << OccupantView.view)
+            BoardView.toSvgAndMsg
+                (Svg.g [] << List.singleton << OccupantView.view)
+                (always NoOp)
     in
         BoardView.view config (Board.view board)
-            |> Html.map (always NoOp)
             |> List.singleton
             |> Html.main_
                 [ Html.Attributes.style

@@ -15,7 +15,7 @@ import Player exposing (Player(..))
 import Marker exposing (Marker(..))
 
 
-view : ( Int, Int, Maybe ( Player, Marker ) ) -> Svg Never
+view : ( Int, Int, Maybe ( Player, Marker ) ) -> Svg msg
 view ( x, y, occupant ) =
     let
         cartesian : ( Float, Float )
@@ -26,7 +26,7 @@ view ( x, y, occupant ) =
         toCoordinate =
             toString << toFloat
 
-        baseAttrs : List (Svg.Attribute Never)
+        baseAttrs : List (Svg.Attribute msg)
         baseAttrs =
             let
                 ( x, y ) =
@@ -36,11 +36,11 @@ view ( x, y, occupant ) =
                 , cy (toString y)
                 ]
 
-        emptyAttrs : List (Svg.Attribute Never)
+        emptyAttrs : List (Svg.Attribute msg)
         emptyAttrs =
             [ r "1%", fill "grey" ]
 
-        ringAttrs : String -> List (Svg.Attribute Never)
+        ringAttrs : String -> List (Svg.Attribute msg)
         ringAttrs color =
             [ r "4%"
             , fill "none"
@@ -48,11 +48,11 @@ view ( x, y, occupant ) =
             , strokeWidth "1%"
             ]
 
-        discAttrs : String -> List (Svg.Attribute Never)
+        discAttrs : String -> List (Svg.Attribute msg)
         discAttrs color =
             [ r "3%", fill color ]
 
-        makeCircle : List (Svg.Attribute Never) -> Svg Never
+        makeCircle : List (Svg.Attribute msg) -> Svg msg
         makeCircle attrs =
             Svg.circle (baseAttrs ++ attrs) []
     in
