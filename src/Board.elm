@@ -2,7 +2,7 @@ module Board
     exposing
         ( Board
         , init
-        , view
+        , toList
         , add
         )
 
@@ -32,8 +32,8 @@ add x y player marker model =
     Dict.insert ( x, y ) (Occupant.occupied player marker) model
 
 
-view : Model player marker -> List ( Int, Int, Maybe ( player, marker ) )
-view model =
+toList : Model player marker -> List ( Int, Int, Maybe ( player, marker ) )
+toList model =
     let
         toTuple : Coordinate -> Occupant player marker -> ( Int, Int, Maybe ( player, marker ) )
         toTuple ( x, y ) v =

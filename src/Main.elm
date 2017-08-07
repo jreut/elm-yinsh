@@ -7,8 +7,6 @@ import Board exposing (Board)
 import Game
 import View.Board as BoardView
 import View.Occupant as OccupantView
-import Player exposing (Player(..))
-import Marker exposing (Marker(..))
 
 
 main : Program Never Model Msg
@@ -23,22 +21,7 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    let
-        board =
-            Board.init 4.6
-                |> Board.add -1 -5 Black Ring
-                |> Board.add -1 4 White Ring
-                |> Board.add 0 -4 Black Ring
-                |> Board.add 0 4 Black Disc
-                |> Board.add 1 -4 Black Ring
-                |> Board.add 1 2 White Ring
-                |> Board.add 1 5 White Disc
-                |> Board.add 2 0 Black Disc
-    in
-        { board = board
-        , state = Game.init |> Game.nextPlayer |> Game.nextPlayer
-        }
-            ! []
+    { game = Game.init } ! []
 
 
 
@@ -46,9 +29,7 @@ init =
 
 
 type alias Model =
-    { board : Board Player Marker
-    , state : Game.State
-    }
+    { game : Game.State }
 
 
 
@@ -56,18 +37,15 @@ type alias Model =
 
 
 view : Model -> Html Msg
-view model =
+view { game } =
     let
-        { board, state } =
-            model
-
         config =
             BoardView.toSvgAndMsg
                 (Svg.g [] << List.singleton << OccupantView.view)
                 (always NoOp)
 
         boardView =
-            BoardView.view config (Board.view board)
+            BoardView.view config (game |> Game.board |> Board.toList)
     in
         Html.main_
             [ Html.Attributes.style
@@ -76,18 +54,18 @@ view model =
                   )
                 ]
             ]
-            [ boardView, messagesView model ]
+            [ boardView, messagesView (Game.message game) ]
 
 
-messagesView : Model -> Html Msg
-messagesView { state } =
+messagesView : String -> Html Msg
+messagesView message =
     Html.div
         [ Html.Attributes.style
             [ ( "width", "100vw" )
             , ( "height", "20vh" )
             ]
         ]
-        [ Html.text ((Game.toMove state |> toString) ++ " to move") ]
+        [ Html.text message ]
 
 
 

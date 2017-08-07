@@ -2,12 +2,13 @@ module Game
     exposing
         ( State
         , init
-        , toMove
-        , nextPlayer
+        , board
+        , message
         )
 
-import Dict exposing (Dict)
+import Board exposing (Board)
 import Player exposing (Player(..))
+import Marker exposing (Marker(..))
 
 
 type State
@@ -15,33 +16,37 @@ type State
         { toMove : Player
         , whiteScore : Int
         , blackScore : Int
+        , board : Board Player Marker
         }
 
 
 init : State
 init =
-    State
-        { toMove = White
-        , whiteScore = 0
-        , blackScore = 0
-        }
+    let
+        board =
+            Board.init 4.6
+                |> Board.add -1 -5 Black Ring
+                |> Board.add -1 4 White Ring
+                |> Board.add 0 -4 Black Ring
+                |> Board.add 0 4 Black Disc
+                |> Board.add 1 -4 Black Ring
+                |> Board.add 1 2 White Ring
+                |> Board.add 1 5 White Disc
+                |> Board.add 2 0 Black Disc
+    in
+        State
+            { toMove = White
+            , whiteScore = 0
+            , blackScore = 0
+            , board = board
+            }
 
 
-toMove : State -> Player
-toMove (State { toMove }) =
-    toMove
+board : State -> Board Player Marker
+board (State { board }) =
+    board
 
 
-nextPlayer : State -> State
-nextPlayer (State state) =
-    State { state | toMove = (Player.next state.toMove) }
-
-
-incrementScore : Player -> State -> State
-incrementScore player (State state) =
-    case player of
-        White ->
-            State { state | whiteScore = state.whiteScore + 1 }
-
-        Black ->
-            State { state | blackScore = state.blackScore + 1 }
+message : State -> String
+message =
+    always "Welcome to Yinsh!"
