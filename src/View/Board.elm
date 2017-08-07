@@ -11,8 +11,7 @@ import Html exposing (Html)
 
 
 type Config datum msg
-    = JustSvg (datum -> Svg msg)
-    | SvgWithMsg
+    = SvgWithMsg
         { toSvg : datum -> Svg msg
         , toMsg : datum -> msg
         }
@@ -24,22 +23,16 @@ toSvgAndMsg toSvg toMsg =
 
 
 view : Config datum msg -> List datum -> Html msg
-view config data =
+view (SvgWithMsg { toSvg, toMsg }) data =
     let
         container =
             svg
                 [ viewBox "-6 -6 12 12"
-                , height "100vh"
+                , height "80vh"
                 , width "100vw"
                 ]
-    in
-        case config of
-            JustSvg toSvg ->
-                data |> List.map toSvg |> container
 
-            SvgWithMsg { toSvg, toMsg } ->
-                let
-                    makeNode datum =
-                        g [ onClick (toMsg datum) ] [ toSvg datum ]
-                in
-                    data |> List.map makeNode |> container
+        makeNode datum =
+            g [ onClick (toMsg datum) ] [ toSvg datum ]
+    in
+        data |> List.map makeNode |> container

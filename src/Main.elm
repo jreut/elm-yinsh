@@ -4,6 +4,7 @@ import Html exposing (Html)
 import Html.Attributes
 import Svg exposing (Svg)
 import Board exposing (Board)
+import Game
 import View.Board as BoardView
 import View.Occupant as OccupantView
 import Player exposing (Player(..))
@@ -34,7 +35,10 @@ init =
                 |> Board.add 1 5 White Disc
                 |> Board.add 2 0 Black Disc
     in
-        { board = board } ! []
+        { board = board
+        , state = Game.init |> Game.nextPlayer |> Game.nextPlayer
+        }
+            ! []
 
 
 
@@ -42,7 +46,9 @@ init =
 
 
 type alias Model =
-    { board : Board Player Marker }
+    { board : Board Player Marker
+    , state : Game.State
+    }
 
 
 
@@ -50,22 +56,38 @@ type alias Model =
 
 
 view : Model -> Html Msg
-view { board } =
+view model =
     let
+        { board, state } =
+            model
+
         config =
             BoardView.toSvgAndMsg
                 (Svg.g [] << List.singleton << OccupantView.view)
                 (always NoOp)
+
+        boardView =
+            BoardView.view config (Board.view board)
     in
-        BoardView.view config (Board.view board)
-            |> List.singleton
-            |> Html.main_
-                [ Html.Attributes.style
-                    [ ( "backgroundColor"
-                      , "lightblue"
-                      )
-                    ]
+        Html.main_
+            [ Html.Attributes.style
+                [ ( "backgroundColor"
+                  , "lightblue"
+                  )
                 ]
+            ]
+            [ boardView, messagesView model ]
+
+
+messagesView : Model -> Html Msg
+messagesView { state } =
+    Html.div
+        [ Html.Attributes.style
+            [ ( "width", "100vw" )
+            , ( "height", "20vh" )
+            ]
+        ]
+        [ Html.text ((Game.toMove state |> toString) ++ " to move") ]
 
 
 
