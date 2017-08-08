@@ -22,28 +22,18 @@ type State
         { whiteScore : Int
         , blackScore : Int
         , board : Board Player Marker
+        , toMove : Player
         }
 
 
 init : State
 init =
-    let
-        board =
-            Board.init 4.6
-                |> Board.add -1 -5 Black Ring
-                |> Board.add -1 4 White Ring
-                |> Board.add 0 -4 Black Ring
-                |> Board.add 0 4 Black Disc
-                |> Board.add 1 -4 Black Ring
-                |> Board.add 1 2 White Ring
-                |> Board.add 1 5 White Disc
-                |> Board.add 2 0 Black Disc
-    in
-        State
-            { whiteScore = 0
-            , blackScore = 0
-            , board = board
-            }
+    State
+        { whiteScore = 0
+        , blackScore = 0
+        , board = Board.init 4.6
+        , toMove = White
+        }
 
 
 board : State -> Board Player Marker
@@ -56,13 +46,13 @@ board (State { board }) =
 
 
 availableMoves : State -> List Move
-availableMoves (State { board }) =
-    Board.emptyPositions board |> List.map (AddRing White)
+availableMoves (State { board, toMove }) =
+    Board.emptyPositions board |> List.map (AddRing toMove)
 
 
 message : State -> String
-message =
-    always "Welcome to Yinsh!"
+message (State { toMove }) =
+    (toString toMove) ++ " to place a ring"
 
 
 
@@ -77,4 +67,8 @@ update : Move -> State -> State
 update move (State state) =
     case move of
         AddRing player ( x, y ) ->
-            State { state | board = Board.add x y player Ring state.board }
+            State
+                { state
+                    | board = Board.add x y player Ring state.board
+                    , toMove = Player.next state.toMove
+                }

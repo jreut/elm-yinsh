@@ -75,16 +75,13 @@ messagesView message =
 actionsView : List Game.Move -> Html Msg
 actionsView moves =
     let
-        makeLi =
+        makeButton =
             \move ->
-                Html.li []
-                    [ Html.button
-                        [ onClick (MakeMove move)
-                        ]
-                        [ Html.text (toString move) ]
-                    ]
+                Html.button
+                    [ onClick (MakeMove move) ]
+                    [ Html.text (toString move) ]
     in
-        Html.ul [] (List.map makeLi moves)
+        Html.div [] (List.map makeButton moves)
 
 
 
