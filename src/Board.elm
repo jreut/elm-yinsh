@@ -4,6 +4,7 @@ module Board
         , init
         , toList
         , add
+        , emptyPositions
         )
 
 import Dict exposing (Dict)
@@ -40,3 +41,8 @@ toList model =
             ( x, y, Occupant.toMaybe v )
     in
         Dict.map toTuple model |> Dict.values
+
+
+emptyPositions : Model player marker -> List ( Int, Int )
+emptyPositions model =
+    Dict.filter (\_ v -> v == Occupant.empty) model |> Dict.keys

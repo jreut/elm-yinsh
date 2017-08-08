@@ -1,7 +1,8 @@
 module Main exposing (main)
 
 import Html exposing (Html)
-import Html.Attributes
+import Html.Attributes exposing (style)
+import Html.Events exposing (onClick)
 import Svg exposing (Svg)
 import Board exposing (Board)
 import Game
@@ -48,13 +49,16 @@ view { game } =
             BoardView.view config (game |> Game.board |> Board.toList)
     in
         Html.main_
-            [ Html.Attributes.style
+            [ style
                 [ ( "backgroundColor"
                   , "lightblue"
                   )
                 ]
             ]
-            [ boardView, messagesView (Game.message game) ]
+            [ boardView
+            , messagesView (Game.message game)
+            , actionsView (Game.availableMoves game)
+            ]
 
 
 messagesView : String -> Html Msg
@@ -62,10 +66,25 @@ messagesView message =
     Html.div
         [ Html.Attributes.style
             [ ( "width", "100vw" )
-            , ( "height", "20vh" )
+            , ( "height", "10vh" )
             ]
         ]
         [ Html.text message ]
+
+
+actionsView : List Game.Move -> Html Msg
+actionsView moves =
+    let
+        makeLi =
+            \move ->
+                Html.li []
+                    [ Html.button
+                        [ onClick (MakeMove move)
+                        ]
+                        [ Html.text (toString move) ]
+                    ]
+    in
+        Html.ul [] (List.map makeLi moves)
 
 
 
@@ -83,8 +102,14 @@ subscriptions =
 
 type Msg
     = NoOp
+    | MakeMove Game.Move
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        NoOp ->
+            model ! []
+
+        MakeMove move ->
+            { model | game = Game.update move model.game } ! []

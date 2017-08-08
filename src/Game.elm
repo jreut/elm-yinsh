@@ -1,9 +1,12 @@
 module Game
     exposing
         ( State
+        , Move
         , init
+        , update
         , board
         , message
+        , availableMoves
         )
 
 import Board exposing (Board)
@@ -11,10 +14,12 @@ import Player exposing (Player(..))
 import Marker exposing (Marker(..))
 
 
+-- MODEL
+
+
 type State
     = State
-        { toMove : Player
-        , whiteScore : Int
+        { whiteScore : Int
         , blackScore : Int
         , board : Board Player Marker
         }
@@ -35,8 +40,7 @@ init =
                 |> Board.add 2 0 Black Disc
     in
         State
-            { toMove = White
-            , whiteScore = 0
+            { whiteScore = 0
             , blackScore = 0
             , board = board
             }
@@ -47,6 +51,30 @@ board (State { board }) =
     board
 
 
+
+-- VIEW
+
+
+availableMoves : State -> List Move
+availableMoves (State { board }) =
+    Board.emptyPositions board |> List.map (AddRing White)
+
+
 message : State -> String
 message =
     always "Welcome to Yinsh!"
+
+
+
+-- UPDATE
+
+
+type Move
+    = AddRing Player ( Int, Int )
+
+
+update : Move -> State -> State
+update move (State state) =
+    case move of
+        AddRing player ( x, y ) ->
+            State { state | board = Board.add x y player Ring state.board }
