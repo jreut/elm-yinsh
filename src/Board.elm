@@ -3,6 +3,7 @@ module Board
         ( Board
         , init
         , toList
+        , filter
         , add
         , emptyPositions
         )
@@ -43,6 +44,17 @@ toList model =
         Dict.map toTuple model |> Dict.values
 
 
-emptyPositions : Model player marker -> List ( Int, Int )
+emptyPositions : Model player marker -> List Coordinate
 emptyPositions model =
-    Dict.filter (\_ v -> v == Occupant.empty) model |> Dict.keys
+    Dict.filter (always <| (==) Occupant.empty) model |> Dict.keys
+
+
+filter : (Coordinate -> player -> marker -> Bool) -> Model player marker -> Model player marker
+filter f dict =
+    let
+        f_ coordinate occupant =
+            Occupant.toMaybe occupant
+                |> Maybe.map (\( player, marker ) -> f coordinate player marker)
+                |> Maybe.withDefault False
+    in
+        Dict.filter f_ dict

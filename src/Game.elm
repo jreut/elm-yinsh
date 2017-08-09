@@ -9,6 +9,7 @@ module Game
         , availableMoves
         )
 
+import Dict exposing (Dict)
 import Board exposing (Board)
 import Player exposing (Player(..))
 import Marker exposing (Marker(..))
@@ -50,9 +51,24 @@ availableMoves (State { board, toMove }) =
     Board.emptyPositions board |> List.map (AddRing toMove)
 
 
+ringCount : Board Player Marker -> Int
+ringCount board =
+    let
+        filter coord player marker =
+            case marker of
+                Ring ->
+                    True
+
+                _ ->
+                    False
+    in
+        Board.filter filter board
+            |> Dict.size
+
+
 message : State -> String
-message (State { toMove }) =
-    (toString toMove) ++ " to place a ring"
+message (State { toMove, board }) =
+    (toString toMove) ++ " to place a ring (" ++ (ringCount board |> toString) ++ " rings placed)"
 
 
 
