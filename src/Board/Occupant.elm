@@ -4,6 +4,7 @@ module Board.Occupant
         , empty
         , occupied
         , toMaybe
+        , isEmpty
         )
 
 
@@ -30,3 +31,13 @@ toMaybe occupant =
 
         Occupied player marker ->
             Just ( player, marker )
+
+
+isEmpty : Occupant player marker -> Bool
+isEmpty occupant =
+    case occupant of
+        Empty ->
+            True
+
+        _ ->
+            False

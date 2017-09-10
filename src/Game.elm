@@ -10,9 +10,12 @@ module Game
         )
 
 import Dict exposing (Dict)
+import Set exposing (Set)
 import Board exposing (Board)
+import Board.Occupant exposing (Occupant)
 import Player exposing (Player(..))
 import Marker exposing (Marker(..))
+import List.Extra exposing (span)
 
 
 -- MODEL
@@ -49,10 +52,6 @@ board (State { board }) =
     board
 
 
-
--- VIEW
-
-
 availableMoves : State -> List Move
 availableMoves (State { board, toMove, phase }) =
     case phase of
@@ -60,8 +59,13 @@ availableMoves (State { board, toMove, phase }) =
             Board.emptyPositions board |> List.map (AddRing toMove)
 
         MovingRings ->
-            -- WIP
-            []
+            ringsFor toMove board
+                |> List.concatMap
+                    (\coordinate ->
+                        freedomsFor coordinate board
+                            |> Set.toList
+                            |> List.map (MoveRing toMove coordinate)
+                    )
 
 
 ringCount : Board Player Marker -> Int
@@ -74,11 +78,76 @@ ringCount board =
             |> Dict.size
 
 
+ringsFor : Player -> Board Player Marker -> List ( Int, Int )
+ringsFor player board =
+    let
+        filter coord player_ marker =
+            player == player_ && Ring == marker
+    in
+        Board.filter filter board
+            |> Board.toList
+            |> List.map (\( x, y, _ ) -> ( x, y ))
+
+
+freedomsFor : ( Int, Int ) -> Board Player Marker -> Set ( Int, Int )
+freedomsFor coordinate board =
+    Board.raysFrom coordinate board
+        |> List.concatMap freedomsForRay
+        |> Set.fromList
+        |> Debug.log ("freedoms for " ++ (toString coordinate))
+
+
+freedomsForRay : List ( Int, Int, Occupant Player Marker ) -> List ( Int, Int )
+freedomsForRay ray =
+    let
+        ( empties, rest ) =
+            span
+                (\( _, _, occupant ) -> Board.Occupant.isEmpty occupant)
+                ray
+
+        positions =
+            case jumpCoordinate rest of
+                Nothing ->
+                    empties
+
+                Just position ->
+                    empties ++ [ position ]
+    in
+        List.map (\( x, y, _ ) -> ( x, y )) positions
+
+
+jumpCoordinate : List ( Int, Int, Occupant Player Marker ) -> Maybe ( Int, Int, Occupant Player Marker )
+jumpCoordinate xs =
+    case xs of
+        [] ->
+            Nothing
+
+        ( x, y, occupant ) :: ys ->
+            case Board.Occupant.toMaybe occupant of
+                Just ( player, marker ) ->
+                    case marker of
+                        Ring ->
+                            Nothing
+
+                        Disc ->
+                            jumpCoordinate ys
+
+                _ ->
+                    Just ( x, y, occupant )
+
+
+
+-- VIEW
+
+
 message : State -> String
 message (State { toMove, board, phase }) =
     case phase of
         PlacingRings ->
             (toString toMove) ++ " to place a ring (" ++ (ringCount board |> toString) ++ " rings placed)"
+
+        MovingRings ->
+            (toString toMove) ++ " to move"
 
 
 
@@ -86,7 +155,9 @@ message (State { toMove, board, phase }) =
 
 
 type Move
-    = AddRing Player ( Int, Int )
+    = -- AddRing player at@(x,y)
+      AddRing Player ( Int, Int )
+      -- MoveRing player from@(x,y) to@(x,y)
     | MoveRing Player ( Int, Int ) ( Int, Int )
 
 
@@ -98,24 +169,35 @@ update move (State state) =
 updateBoard : Move -> Board Player Marker -> Board Player Marker
 updateBoard move board =
     case move of
-        AddRing player ( x, y ) ->
-            Board.add x y player Ring board
+        AddRing player coordinate ->
+            Board.add coordinate player Ring board
 
         MoveRing player from to ->
             moveRing player from to board
 
 
 moveRing : Player -> ( Int, Int ) -> ( Int, Int ) -> Board Player Marker -> Board Player Marker
-moveRing player ( fromX, fromY ) ( toX, toY ) board =
+moveRing player from to board =
     board
-        |> Board.add fromX fromY player Disc
-        |> Board.add toX toY player Ring
+        |> Board.add from player Disc
+        |> Board.add to player Ring
 
 
 updatePhase : State -> State
 updatePhase (State state) =
     case state.phase of
         PlacingRings ->
+            if ringCount state.board < 10 then
+                nextPlayer (State state)
+            else
+                nextPlayer
+                    (State
+                        { state
+                            | phase = MovingRings
+                        }
+                    )
+
+        MovingRings ->
             nextPlayer (State state)
 
 
