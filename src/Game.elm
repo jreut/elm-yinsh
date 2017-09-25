@@ -97,7 +97,6 @@ freedomsFor coordinate board =
     Board.raysFrom coordinate board
         |> List.concatMap freedomsForRay
         |> Set.fromList
-        |> Debug.log ("freedoms for " ++ (toString coordinate))
 
 
 freedomsForRay : List (Position Player Marker) -> List ( Int, Int )
