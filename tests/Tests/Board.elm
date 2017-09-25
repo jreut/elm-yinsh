@@ -6,6 +6,7 @@ import Test exposing (..)
 import Set exposing (Set)
 import Dict
 import Board
+import Coordinate.Hexagonal exposing (Coordinate)
 
 
 smallBoard =
@@ -25,10 +26,10 @@ smallBoardPositions =
     )
 
 
-raysOfCoordinates : ( Int, Int ) -> Board.Board player occupant -> Set (List ( Int, Int ))
+raysOfCoordinates : Coordinate -> Board.Board player occupant -> Set (List Coordinate)
 raysOfCoordinates origin model =
     Board.raysFrom origin model
-        |> List.map (List.map (\( x, y, _ ) -> ( x, y )))
+        |> List.map (List.map (.coordinate))
         |> Set.fromList
 
 
@@ -43,7 +44,7 @@ suite =
                             |> Expect.equal
                                 (smallBoardPositions
                                     |> Set.remove ( 0, 0 )
-                                    |> Set.map (\( f, s ) -> [ ( 0, 0 ), ( f, s ) ])
+                                    |> Set.map List.singleton
                                 )
                 ]
             , describe "an edge (-1,-1)"
@@ -52,12 +53,12 @@ suite =
                         raysOfCoordinates ( -1, -1 ) smallBoard
                             |> Expect.equal
                                 (Set.fromList
-                                    [ [ ( -1, -1 ), ( 0, 0 ), ( 1, 1 ) ]
-                                    , [ ( -1, -1 ), ( 0, -1 ) ]
-                                    , [ ( -1, -1 ), ( -1, 0 ) ]
-                                    , [ ( -1, -1 ) ]
-                                    , [ ( -1, -1 ) ]
-                                    , [ ( -1, -1 ) ]
+                                    [ [ ( 0, 0 ), ( 1, 1 ) ]
+                                    , [ ( 0, -1 ) ]
+                                    , [ ( -1, 0 ) ]
+                                    , []
+                                    , []
+                                    , []
                                     ]
                                 )
                 ]

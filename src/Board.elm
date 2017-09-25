@@ -1,8 +1,10 @@
 module Board
     exposing
         ( Board
+        , Position
         , init
-        , toList
+        , positions
+        , coordinates
         , filter
         , add
         , emptyPositions
@@ -24,7 +26,9 @@ type alias Model player marker =
 
 
 type alias Position player marker =
-    ( Int, Int, Occupant player marker )
+    { occupant : Occupant player marker
+    , coordinate : Coordinate
+    }
 
 
 init : Float -> Model player marker
@@ -40,14 +44,19 @@ add coordinate player marker model =
     Dict.insert coordinate (Occupant.occupied player marker) model
 
 
-toList : Model player marker -> List ( Int, Int, Maybe ( player, marker ) )
-toList model =
+coordinates : Model player marker -> List Coordinate
+coordinates =
+    Dict.keys
+
+
+positions : Model player marker -> List (Position player marker)
+positions model =
     let
-        toTuple : Coordinate -> Occupant player marker -> ( Int, Int, Maybe ( player, marker ) )
-        toTuple ( x, y ) v =
-            ( x, y, Occupant.toMaybe v )
+        toPosition : Coordinate -> Occupant player marker -> Position player marker
+        toPosition ( x, y ) v =
+            { coordinate = ( x, y ), occupant = v }
     in
-        Dict.map toTuple model |> Dict.values
+        Dict.map toPosition model |> Dict.values
 
 
 rayFrom : Coordinate -> Coordinate -> Board player marker -> List (Position player marker)
@@ -60,9 +69,14 @@ rayFrom origin ( dx, dy ) model =
                     acc
 
                 Just occupant ->
-                    recRay ( x + dx, y + dy ) (( x, y, occupant ) :: acc)
+                    recRay ( x + dx, y + dy )
+                        ({ occupant = occupant
+                         , coordinate = ( x, y )
+                         }
+                            :: acc
+                        )
     in
-        recRay origin [] |> List.reverse
+        recRay origin [] |> List.reverse |> List.drop 1
 
 
 raysFrom : Coordinate -> Model player marker -> List (List (Position player marker))

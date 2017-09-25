@@ -11,16 +11,18 @@ import Svg.Attributes
         , stroke
         , strokeWidth
         )
-import Player exposing (Player(..))
-import Marker exposing (Marker(..))
+import Player exposing (Player(White, Black))
+import Marker exposing (Marker(Disc, Ring))
+import Board exposing (Position)
+import Board.Occupant exposing (Occupant)
 
 
-view : ( Int, Int, Maybe ( Player, Marker ) ) -> Svg msg
-view ( x, y, occupant ) =
+view : Position Player Marker -> Svg msg
+view { coordinate, occupant } =
     let
         cartesian : ( Float, Float )
         cartesian =
-            toCartesian 1 ( x, y )
+            toCartesian 1 coordinate
 
         toCoordinate : Int -> String
         toCoordinate =
@@ -56,7 +58,7 @@ view ( x, y, occupant ) =
         makeCircle attrs =
             Svg.circle (baseAttrs ++ attrs) []
     in
-        case occupant of
+        case Board.Occupant.toMaybe occupant of
             Nothing ->
                 makeCircle emptyAttrs
 

@@ -46,7 +46,7 @@ view { game } =
                 (always NoOp)
 
         boardView =
-            BoardView.view config (game |> Game.board |> Board.toList)
+            BoardView.view config (game |> Game.board |> Board.positions)
     in
         Html.main_
             [ style

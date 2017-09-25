@@ -14,7 +14,7 @@ module Game
 
 import Dict exposing (Dict)
 import Set exposing (Set)
-import Board exposing (Board)
+import Board exposing (Board, Position)
 import Board.Occupant exposing (Occupant)
 import Player exposing (Player(..))
 import Marker exposing (Marker(..))
@@ -89,9 +89,7 @@ ringsFor player board =
         filter coord player_ marker =
             player == player_ && Ring == marker
     in
-        Board.filter filter board
-            |> Board.toList
-            |> List.map (\( x, y, _ ) -> ( x, y ))
+        Board.filter filter board |> Board.coordinates
 
 
 freedomsFor : ( Int, Int ) -> Board Player Marker -> Set ( Int, Int )
@@ -102,12 +100,12 @@ freedomsFor coordinate board =
         |> Debug.log ("freedoms for " ++ (toString coordinate))
 
 
-freedomsForRay : List ( Int, Int, Occupant Player Marker ) -> List ( Int, Int )
+freedomsForRay : List (Position Player Marker) -> List ( Int, Int )
 freedomsForRay ray =
     let
         ( empties, rest ) =
             span
-                (\( _, _, occupant ) -> Board.Occupant.isEmpty occupant)
+                (\position -> Board.Occupant.isEmpty position.occupant)
                 ray
 
         positions =
@@ -118,17 +116,17 @@ freedomsForRay ray =
                 Just position ->
                     empties ++ [ position ]
     in
-        List.map (\( x, y, _ ) -> ( x, y )) positions
+        List.map (.coordinate) positions
 
 
-jumpCoordinate : List ( Int, Int, Occupant Player Marker ) -> Maybe ( Int, Int, Occupant Player Marker )
+jumpCoordinate : List (Position Player Marker) -> Maybe (Position Player Marker)
 jumpCoordinate xs =
     case xs of
         [] ->
             Nothing
 
-        ( x, y, occupant ) :: ys ->
-            case Board.Occupant.toMaybe occupant of
+        position :: ys ->
+            case Board.Occupant.toMaybe position.occupant of
                 Just ( player, marker ) ->
                     case marker of
                         Ring ->
@@ -138,7 +136,7 @@ jumpCoordinate xs =
                             jumpCoordinate ys
 
                 _ ->
-                    Just ( x, y, occupant )
+                    Just position
 
 
 
