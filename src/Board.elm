@@ -10,6 +10,7 @@ module Board
         )
 
 import Dict exposing (Dict)
+import Set exposing (Set)
 import Coordinate.Hexagonal as Hex exposing (Coordinate)
 import Board.Occupant as Occupant exposing (Occupant)
 
@@ -61,7 +62,7 @@ rayFrom origin ( dx, dy ) model =
                 Just occupant ->
                     recRay ( x + dx, y + dy ) (( x, y, occupant ) :: acc)
     in
-        recRay origin []
+        recRay origin [] |> List.reverse
 
 
 raysFrom : Coordinate -> Model player marker -> List (List (Position player marker))
@@ -74,9 +75,9 @@ raysFrom coordinate model =
             |> List.map (\direction -> rayFrom coordinate direction model)
 
 
-emptyPositions : Model player marker -> List Coordinate
+emptyPositions : Model player marker -> Set Coordinate
 emptyPositions model =
-    Dict.filter (always <| (==) Occupant.empty) model |> Dict.keys
+    Dict.filter (always <| (==) Occupant.empty) model |> Dict.keys |> Set.fromList
 
 
 filter : (Coordinate -> player -> marker -> Bool) -> Model player marker -> Model player marker

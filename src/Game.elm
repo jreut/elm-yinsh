@@ -7,6 +7,9 @@ module Game
         , board
         , message
         , availableMoves
+          -- for testing
+        , jumpCoordinate
+        , freedomsForRay
         )
 
 import Dict exposing (Dict)
@@ -56,7 +59,9 @@ availableMoves : State -> List Move
 availableMoves (State { board, toMove, phase }) =
     case phase of
         PlacingRings ->
-            Board.emptyPositions board |> List.map (AddRing toMove)
+            Board.emptyPositions board
+                |> Set.toList
+                |> List.map (AddRing toMove)
 
         MovingRings ->
             ringsFor toMove board
