@@ -8,6 +8,8 @@ import Board exposing (Board)
 import Game
 import View.Board as BoardView
 import View.Occupant as OccupantView
+import Player exposing (Player)
+import Marker exposing (Marker)
 
 
 main : Program Never Model Msg
@@ -41,9 +43,10 @@ view : Model -> Html Msg
 view { game } =
     let
         config =
-            BoardView.toSvgAndMsg
-                (Svg.g [] << List.singleton << OccupantView.view)
-                (always NoOp)
+            BoardView.config
+                { toSvg = toSvg game
+                , toMsg = toMsg game
+                }
 
         boardView =
             BoardView.view config (game |> Game.board |> Board.positions)
@@ -59,6 +62,25 @@ view { game } =
             , messagesView (Game.message game)
             , actionsView (Game.availableMoves game)
             ]
+
+
+toSvg : Game.State -> Board.Position Player Marker -> Svg Msg
+toSvg game position =
+    let
+        shouldHighlight =
+            Game.movesForCoordinate position.coordinate (Game.availableMoves game)
+                |> not
+                << List.isEmpty
+    in
+        OccupantView.view shouldHighlight position
+
+
+toMsg : Game.State -> Board.Position Player Marker -> Msg
+toMsg game { coordinate } =
+    Game.movesForCoordinate coordinate (Game.availableMoves game)
+        |> List.head
+        |> Maybe.map MakeMove
+        |> Maybe.withDefault NoOp
 
 
 messagesView : String -> Html Msg

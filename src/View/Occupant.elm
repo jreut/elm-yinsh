@@ -17,8 +17,8 @@ import Board exposing (Position)
 import Board.Occupant exposing (Occupant)
 
 
-view : Position Player Marker -> Svg msg
-view { coordinate, occupant } =
+view : Bool -> Position Player Marker -> Svg msg
+view shouldHighlight { coordinate, occupant } =
     let
         cartesian : ( Float, Float )
         cartesian =

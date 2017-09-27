@@ -7,6 +7,7 @@ module Game
         , board
         , message
         , availableMoves
+        , movesForCoordinate
           -- for testing
         , jumpCoordinate
         , freedomsForRay
@@ -16,6 +17,7 @@ import Dict exposing (Dict)
 import Set exposing (Set)
 import Board exposing (Board, Position)
 import Board.Occupant exposing (Occupant)
+import Coordinate.Hexagonal exposing (Coordinate)
 import Player exposing (Player(..))
 import Marker exposing (Marker(..))
 import List.Extra exposing (span)
@@ -158,9 +160,23 @@ message (State { toMove, board, phase }) =
 
 type Move
     = -- AddRing player at@(x,y)
-      AddRing Player ( Int, Int )
+      AddRing Player Coordinate
       -- MoveRing player from@(x,y) to@(x,y)
-    | MoveRing Player ( Int, Int ) ( Int, Int )
+    | MoveRing Player Coordinate Coordinate
+
+
+movesForCoordinate : Coordinate -> List Move -> List Move
+movesForCoordinate coordinate =
+    let
+        filter move =
+            case move of
+                AddRing _ target ->
+                    target == coordinate
+
+                MoveRing _ _ _ ->
+                    False
+    in
+        List.filter filter
 
 
 update : Move -> State -> State

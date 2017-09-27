@@ -1,7 +1,7 @@
 module View.Board
     exposing
         ( view
-        , toSvgAndMsg
+        , config
         )
 
 import Svg exposing (Svg, svg, g)
@@ -11,19 +11,23 @@ import Html exposing (Html)
 
 
 type Config datum msg
-    = SvgWithMsg
+    = Config
         { toSvg : datum -> Svg msg
         , toMsg : datum -> msg
         }
 
 
-toSvgAndMsg : (datum -> Svg msg) -> (datum -> msg) -> Config datum msg
-toSvgAndMsg toSvg toMsg =
-    SvgWithMsg { toSvg = toSvg, toMsg = toMsg }
+config :
+    { toSvg : datum -> Svg msg
+    , toMsg : datum -> msg
+    }
+    -> Config datum msg
+config =
+    Config
 
 
 view : Config datum msg -> List datum -> Html msg
-view (SvgWithMsg { toSvg, toMsg }) data =
+view (Config { toSvg, toMsg }) data =
     let
         container =
             svg
