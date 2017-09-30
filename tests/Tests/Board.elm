@@ -6,11 +6,20 @@ import Test exposing (..)
 import Set exposing (Set)
 import Dict
 import Board
+    exposing
+        ( Board
+        , init
+        , add
+        , raysFrom
+        , updateBetween
+        , emptyPositions
+        )
+import Board.Occupant as Occupant
 import Coordinate.Hexagonal exposing (Coordinate)
 
 
 smallBoard =
-    Board.init 1
+    init 1
 
 
 smallBoardPositions =
@@ -26,9 +35,9 @@ smallBoardPositions =
     )
 
 
-raysOfCoordinates : Coordinate -> Board.Board player occupant -> Set (List Coordinate)
+raysOfCoordinates : Coordinate -> Board player occupant -> Set (List Coordinate)
 raysOfCoordinates origin model =
-    Board.raysFrom origin model
+    raysFrom origin model
         |> List.map (List.map (.coordinate))
         |> Set.fromList
 
@@ -67,16 +76,37 @@ suite =
             [ describe "of an empty board"
                 [ test "are all the positions" <|
                     \_ ->
-                        Board.emptyPositions smallBoard
+                        emptyPositions smallBoard
                             |> Expect.equal smallBoardPositions
                 ]
             , describe "after adding a single occupant"
                 [ test "are all the positions except that one" <|
                     \_ ->
                         smallBoard
-                            |> Board.add ( 0, 0 ) "player" "marker"
-                            |> Board.emptyPositions
+                            |> add ( 0, 0 ) "player" "marker"
+                            |> emptyPositions
                             |> Expect.equal (smallBoardPositions |> Set.remove ( 0, 0 ))
                 ]
+            ]
+        , describe "updateBetween"
+            [ test "updates each occupant in between" <|
+                \_ ->
+                    let
+                        board =
+                            smallBoard
+                                |> add ( 0, 1 ) "white" "disc"
+                                |> add ( 0, 0 ) "white" "disc"
+                                |> add ( 0, -1 ) "white" "ring"
+
+                        updater occupant =
+                            case Occupant.toMaybe occupant of
+                                Nothing ->
+                                    Occupant.empty
+
+                                Just ( player, marker ) ->
+                                    Occupant.occupied "black" marker
+                    in
+                        updateBetween updater ( 0, 1 ) ( 0, -1 ) board
+                            |> Expect.equal (board |> add ( 0, 0 ) "black" "disc")
             ]
         ]

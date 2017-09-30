@@ -7,13 +7,14 @@ module Board
         , coordinates
         , filter
         , add
-        , flipBetween
+        , updateBetween
         , emptyPositions
         , raysFrom
         )
 
 import Dict exposing (Dict)
 import Set exposing (Set)
+import Tuple exposing (mapFirst, mapSecond)
 import Coordinate.Hexagonal as Hex exposing (Coordinate)
 import Board.Occupant as Occupant exposing (Occupant)
 
@@ -45,9 +46,42 @@ add coordinate player marker model =
     Dict.insert coordinate (Occupant.occupied player marker) model
 
 
-flipBetween : Coordinate -> Coordinate -> Model player marker -> Model player marker
-flipBetween from to =
-    identity
+updateBetween : (Occupant player marker -> Occupant player marker) -> Coordinate -> Coordinate -> Model player marker -> Model player marker
+updateBetween updateOccupant ( fromX, fromY ) ( toX, toY ) model =
+    let
+        ( dx, dy ) =
+            ( sign (toX - fromX), sign (toY - fromY) )
+
+        next =
+            mapFirst ((+) dx) << mapSecond ((+) dy)
+
+        rec coordinate acc =
+            let
+                shouldProceed =
+                    Dict.member coordinate acc
+                        && (coordinate /= ( toX, toY ))
+            in
+                if shouldProceed then
+                    acc
+                        |> Dict.update coordinate (Maybe.map updateOccupant)
+                        |> rec (next coordinate)
+                else
+                    acc
+    in
+        rec (next ( fromX, fromY )) model
+
+
+sign : Int -> Int
+sign int =
+    case compare int 0 of
+        LT ->
+            -1
+
+        EQ ->
+            0
+
+        GT ->
+            1
 
 
 coordinates : Model player marker -> List Coordinate

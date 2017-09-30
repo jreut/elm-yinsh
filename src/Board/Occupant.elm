@@ -4,8 +4,11 @@ module Board.Occupant
         , empty
         , occupied
         , toMaybe
+        , update
         , isEmpty
         )
+
+import Tuple exposing (first, second)
 
 
 type Occupant player marker
@@ -31,6 +34,20 @@ toMaybe occupant =
 
         Occupied player marker ->
             Just ( player, marker )
+
+
+update : (( player, marker ) -> ( player, marker )) -> Occupant player marker -> Occupant player marker
+update f occupant =
+    case occupant of
+        Empty ->
+            Empty
+
+        Occupied player marker ->
+            let
+                tuple =
+                    f ( player, marker )
+            in
+                Occupied (first tuple) (second tuple)
 
 
 isEmpty : Occupant player marker -> Bool

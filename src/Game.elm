@@ -16,7 +16,7 @@ module Game
 import Dict exposing (Dict)
 import Set exposing (Set)
 import Board exposing (Board, Position)
-import Board.Occupant exposing (Occupant)
+import Board.Occupant as Occupant exposing (Occupant)
 import Coordinate.Hexagonal exposing (Coordinate)
 import Player exposing (Player(..))
 import Marker exposing (Marker(..))
@@ -119,7 +119,7 @@ freedomsForRay ray =
     let
         ( empties, rest ) =
             span
-                (\position -> Board.Occupant.isEmpty position.occupant)
+                (\position -> Occupant.isEmpty position.occupant)
                 ray
 
         positions =
@@ -140,7 +140,7 @@ jumpCoordinate xs =
             Nothing
 
         position :: ys ->
-            case Board.Occupant.toMaybe position.occupant of
+            case Occupant.toMaybe position.occupant of
                 Just ( player, marker ) ->
                     case marker of
                         Ring ->
@@ -218,9 +218,13 @@ updateBoard move board =
             Board.add from player Disc board
 
         DropRing player from to ->
-            board
-                |> Board.add to player Ring
-                |> Board.flipBetween from to
+            let
+                flip =
+                    Occupant.update (\( player, marker ) -> ( Player.next player, marker ))
+            in
+                board
+                    |> Board.add to player Ring
+                    |> Board.updateBetween flip from to
 
 
 moveRing : Player -> ( Int, Int ) -> ( Int, Int ) -> Board Player Marker -> Board Player Marker
