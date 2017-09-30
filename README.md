@@ -12,8 +12,7 @@ yarn watch
 
 ## TODO
 
-- flip discs after moves
-- remove runs of five
+- de-dupe run removal (can't use `Set (Player, Set Coordinate)` because `Player` is not comparable)
 - figure out a better way to do the phase/move system
 - performance (ha.)
 
