@@ -67,12 +67,13 @@ availableMoves (State { board, toMove, phase }) =
 
         MovingRings ->
             ringsFor toMove board
-                |> List.concatMap
+                |> List.filter
                     (\coordinate ->
                         freedomsFor coordinate board
-                            |> Set.toList
-                            |> List.map (MoveRing toMove coordinate)
+                            |> not
+                            << Set.isEmpty
                     )
+                |> List.map (StartMovingRing toMove)
 
 
 ringCount : Board Player Marker -> Int
@@ -85,7 +86,7 @@ ringCount board =
             |> Dict.size
 
 
-ringsFor : Player -> Board Player Marker -> List ( Int, Int )
+ringsFor : Player -> Board Player Marker -> List Coordinate
 ringsFor player board =
     let
         filter coord player_ marker =
@@ -162,7 +163,9 @@ type Move
     = -- AddRing player at@(x,y)
       AddRing Player Coordinate
       -- MoveRing player from@(x,y) to@(x,y)
-    | MoveRing Player Coordinate Coordinate
+      -- | MoveRing Player Coordinate Coordinate
+      -- StartMovingRing player from@(x,y)
+    | StartMovingRing Player Coordinate
 
 
 movesForCoordinate : Coordinate -> List Move -> List Move
@@ -173,8 +176,8 @@ movesForCoordinate coordinate =
                 AddRing _ target ->
                     target == coordinate
 
-                MoveRing _ _ to ->
-                    to == coordinate
+                StartMovingRing _ from ->
+                    from == coordinate
     in
         List.filter filter
 
@@ -190,8 +193,8 @@ updateBoard move board =
         AddRing player coordinate ->
             Board.add coordinate player Ring board
 
-        MoveRing player from to ->
-            moveRing player from to board
+        StartMovingRing player from ->
+            Board.add from player Disc board
 
 
 moveRing : Player -> ( Int, Int ) -> ( Int, Int ) -> Board Player Marker -> Board Player Marker
