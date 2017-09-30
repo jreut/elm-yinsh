@@ -15,12 +15,21 @@ module Game
 
 import Dict exposing (Dict)
 import Set exposing (Set)
-import Board exposing (Board, Position)
+import Board
 import Board.Occupant as Occupant exposing (Occupant)
 import Coordinate.Hexagonal exposing (Coordinate)
 import Player exposing (Player(..))
 import Marker exposing (Marker(..))
 import List.Extra exposing (span)
+
+
+type alias Board =
+    Board.Board Player Marker
+
+
+type alias Position =
+    Board.Position Player Marker
+
 
 
 -- MODEL
@@ -30,7 +39,7 @@ type State
     = State
         { whiteScore : Int
         , blackScore : Int
-        , board : Board Player Marker
+        , board : Board
         , toMove : Player
         , phase : Phase
         }
@@ -44,6 +53,7 @@ type MovingPhase
 type Phase
     = PlacingRings
     | MovingRings MovingPhase
+    | RemovingRuns
 
 
 init : State
@@ -57,7 +67,7 @@ init =
         }
 
 
-board : State -> Board Player Marker
+board : State -> Board
 board (State { board }) =
     board
 
@@ -87,8 +97,11 @@ availableMoves (State { board, toMove, phase }) =
                         |> Set.toList
                         |> List.map (DropRing toMove origin)
 
+        RemovingRuns ->
+            Debug.crash "TODO"
 
-ringCount : Board Player Marker -> Int
+
+ringCount : Board -> Int
 ringCount board =
     let
         filter coord player marker =
@@ -98,7 +111,7 @@ ringCount board =
             |> Dict.size
 
 
-ringsFor : Player -> Board Player Marker -> List Coordinate
+ringsFor : Player -> Board -> List Coordinate
 ringsFor player board =
     let
         filter coord player_ marker =
@@ -107,14 +120,14 @@ ringsFor player board =
         Board.filter filter board |> Board.coordinates
 
 
-freedomsFor : Coordinate -> Board Player Marker -> Set Coordinate
+freedomsFor : Coordinate -> Board -> Set Coordinate
 freedomsFor coordinate board =
     Board.raysFrom coordinate board
         |> List.concatMap freedomsForRay
         |> Set.fromList
 
 
-freedomsForRay : List (Position Player Marker) -> List Coordinate
+freedomsForRay : List Position -> List Coordinate
 freedomsForRay ray =
     let
         ( empties, rest ) =
@@ -133,7 +146,7 @@ freedomsForRay ray =
         List.map (.coordinate) positions
 
 
-jumpCoordinate : List (Position Player Marker) -> Maybe (Position Player Marker)
+jumpCoordinate : List Position -> Maybe Position
 jumpCoordinate xs =
     case xs of
         [] ->
@@ -170,6 +183,9 @@ message (State { toMove, board, phase }) =
 
                 DroppingRing _ ->
                     (toString toMove) ++ " to place their ring"
+
+        RemovingRuns ->
+            "Removal of runs"
 
 
 
@@ -208,7 +224,7 @@ update move (State state) =
         |> updatePhase move
 
 
-updateBoard : Move -> Board Player Marker -> Board Player Marker
+updateBoard : Move -> Board -> Board
 updateBoard move board =
     case move of
         AddRing player coordinate ->
@@ -227,7 +243,7 @@ updateBoard move board =
                     |> Board.updateBetween flip from to
 
 
-moveRing : Player -> Coordinate -> Coordinate -> Board Player Marker -> Board Player Marker
+moveRing : Player -> Coordinate -> Coordinate -> Board -> Board
 moveRing player from to board =
     board
         |> Board.add from player Disc
@@ -250,8 +266,15 @@ updatePhase move (State state) =
                     (State { state | phase = MovingRings (DroppingRing (droppingRingOrigin move)) })
 
                 DroppingRing _ ->
-                    nextPlayer
-                        (State { state | phase = MovingRings PlacingDisc })
+                    case List.isEmpty <| runsToRemove state.board of
+                        True ->
+                            nextPlayer (State { state | phase = MovingRings PlacingDisc })
+
+                        False ->
+                            (State { state | phase = RemovingRuns })
+
+        RemovingRuns ->
+            Debug.crash "TODO"
 
 
 nextPlayer : State -> State
@@ -267,3 +290,8 @@ droppingRingOrigin move =
 
         _ ->
             Debug.crash ("This should have been a " ++ (toString StartMovingRing))
+
+
+runsToRemove : Board -> List (List Coordinate)
+runsToRemove =
+    always []
