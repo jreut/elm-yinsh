@@ -173,8 +173,8 @@ movesForCoordinate coordinate =
                 AddRing _ target ->
                     target == coordinate
 
-                MoveRing _ _ _ ->
-                    False
+                MoveRing _ _ to ->
+                    to == coordinate
     in
         List.filter filter
 

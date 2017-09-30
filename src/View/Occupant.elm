@@ -8,6 +8,7 @@ import Svg.Attributes
         , cy
         , r
         , fill
+        , fillOpacity
         , stroke
         , strokeWidth
         )
@@ -57,23 +58,44 @@ view shouldHighlight { coordinate, occupant } =
         makeCircle : List (Svg.Attribute msg) -> Svg msg
         makeCircle attrs =
             Svg.circle (baseAttrs ++ attrs) []
+
+        subject =
+            case Board.Occupant.toMaybe occupant of
+                Nothing ->
+                    makeCircle emptyAttrs
+
+                Just ( player, marker ) ->
+                    let
+                        makeAttrs =
+                            case marker of
+                                Disc ->
+                                    discAttrs
+
+                                Ring ->
+                                    ringAttrs
+                    in
+                        player
+                            |> toString
+                            |> String.toLower
+                            |> makeAttrs
+                            |> makeCircle
     in
-        case Board.Occupant.toMaybe occupant of
-            Nothing ->
-                makeCircle emptyAttrs
+        subject |> withHighlight shouldHighlight baseAttrs
 
-            Just ( player, marker ) ->
-                let
-                    makeAttrs =
-                        case marker of
-                            Disc ->
-                                discAttrs
 
-                            Ring ->
-                                ringAttrs
-                in
-                    player
-                        |> toString
-                        |> String.toLower
-                        |> makeAttrs
-                        |> makeCircle
+withHighlight : Bool -> List (Svg.Attribute msg) -> Svg msg -> Svg msg
+withHighlight doIt baseAttrs svg =
+    if doIt then
+        Svg.g []
+            [ svg
+            , Svg.circle
+                (baseAttrs
+                    ++ [ r "3%"
+                       , fill "yellow"
+                       , fillOpacity ".5"
+                       ]
+                )
+                []
+            ]
+    else
+        svg
