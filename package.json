@@ -1,7 +1,9 @@
 {
   "scripts": {
     "watch": "elm live --open src/Main.elm -- --debug",
-    "build": "elm make src/Main.elm"
+    "prebuild": "yarn clean && mkdir dist",
+    "build": "elm make src/Main.elm --output dist/index.html",
+    "clean": "test -d dist && rm -r dist || echo no cleanup required"
   },
   "devDependencies": {
     "elm": "^0.18.0",
