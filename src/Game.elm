@@ -11,6 +11,7 @@ module Game
           -- for testing
         , jumpCoordinate
         , freedomsForRay
+        , runOfFive
         )
 
 import Dict exposing (Dict)
@@ -50,10 +51,15 @@ type MovingPhase
     | DroppingRing Coordinate
 
 
+type RemovalPhase
+    = RemovingRun
+    | RemovingRing Player
+
+
 type Phase
     = PlacingRings
     | MovingRings MovingPhase
-    | RemovingRuns
+    | RemovingRuns RemovalPhase
 
 
 init : State
@@ -97,8 +103,14 @@ availableMoves (State { board, toMove, phase }) =
                         |> Set.toList
                         |> List.map (DropRing toMove origin)
 
-        RemovingRuns ->
-            Debug.crash "TODO"
+        RemovingRuns removalPhase ->
+            case removalPhase of
+                RemovingRun ->
+                    runsToRemove board
+                        |> List.map (uncurry RemoveRun)
+
+                RemovingRing player ->
+                    ringsFor player board |> List.map RemoveRing
 
 
 ringCount : Board -> Int
@@ -118,6 +130,13 @@ ringsFor player board =
             player == player_ && Ring == marker
     in
         Board.filter filter board |> Board.coordinates
+
+
+discs : Board -> List Coordinate
+discs board =
+    board
+        |> Board.filter (\coord player marker -> Disc == marker)
+        |> Board.coordinates
 
 
 freedomsFor : Coordinate -> Board -> Set Coordinate
@@ -184,8 +203,13 @@ message (State { toMove, board, phase }) =
                 DroppingRing _ ->
                     (toString toMove) ++ " to place their ring"
 
-        RemovingRuns ->
-            "Removal of runs"
+        RemovingRuns removalPhase ->
+            case removalPhase of
+                RemovingRun ->
+                    "Removal of runs"
+
+                RemovingRing player ->
+                    (toString player) ++ " to remove a ring"
 
 
 
@@ -199,6 +223,8 @@ type Move
     | StartMovingRing Player Coordinate
       -- DropRing player from@(x,y) to@(x,y)
     | DropRing Player Coordinate Coordinate
+    | RemoveRun Player (Set Coordinate)
+    | RemoveRing Coordinate
 
 
 movesForCoordinate : Coordinate -> List Move -> List Move
@@ -214,6 +240,12 @@ movesForCoordinate coordinate =
 
                 DropRing _ _ to ->
                     to == coordinate
+
+                RemoveRun _ _ ->
+                    False
+
+                RemoveRing target ->
+                    target == coordinate
     in
         List.filter filter
 
@@ -242,6 +274,12 @@ updateBoard move board =
                     |> Board.add to player Ring
                     |> Board.updateBetween flip from to
 
+        RemoveRun _ coordinates ->
+            Set.foldl Board.remove board coordinates
+
+        RemoveRing coordinate ->
+            Board.remove coordinate board
+
 
 moveRing : Player -> Coordinate -> Coordinate -> Board -> Board
 moveRing player from to board =
@@ -266,15 +304,21 @@ updatePhase move (State state) =
                     (State { state | phase = MovingRings (DroppingRing (droppingRingOrigin move)) })
 
                 DroppingRing _ ->
-                    case List.isEmpty <| runsToRemove state.board of
-                        True ->
-                            nextPlayer (State { state | phase = MovingRings PlacingDisc })
+                    if List.isEmpty <| runsToRemove state.board then
+                        nextPlayer (State { state | phase = MovingRings PlacingDisc })
+                    else
+                        (State { state | phase = RemovingRuns RemovingRun })
 
-                        False ->
-                            (State { state | phase = RemovingRuns })
+        RemovingRuns removalPhase ->
+            case removalPhase of
+                RemovingRun ->
+                    (State { state | phase = RemovingRuns (RemovingRing (removingRunPlayer move)) })
 
-        RemovingRuns ->
-            Debug.crash "TODO"
+                RemovingRing _ ->
+                    if List.isEmpty <| runsToRemove state.board then
+                        nextPlayer (State { state | phase = MovingRings PlacingDisc })
+                    else
+                        (State { state | phase = RemovingRuns RemovingRun })
 
 
 nextPlayer : State -> State
@@ -292,6 +336,53 @@ droppingRingOrigin move =
             Debug.crash ("This should have been a " ++ (toString StartMovingRing))
 
 
-runsToRemove : Board -> List (List Coordinate)
-runsToRemove =
-    always []
+removingRunPlayer : Move -> Player
+removingRunPlayer move =
+    case move of
+        RemoveRun player _ ->
+            player
+
+        _ ->
+            Debug.crash ("This should have been a " ++ (toString RemoveRun))
+
+
+runsToRemove : Board -> List ( Player, Set Coordinate )
+runsToRemove board =
+    board
+        |> discs
+        |> List.concatMap
+            (\coordinate ->
+                Board.raysWithOriginFrom coordinate board
+                    |> List.filterMap runOfFive
+            )
+
+
+runOfFive : List Position -> Maybe ( Player, Set Coordinate )
+runOfFive positions =
+    let
+        rec occupant acc rest =
+            if List.length acc == 5 then
+                Just acc
+            else
+                case rest of
+                    position :: positions ->
+                        if position.occupant == occupant then
+                            rec occupant (position :: acc) positions
+                        else
+                            Nothing
+
+                    [] ->
+                        Nothing
+    in
+        case positions of
+            [] ->
+                Nothing
+
+            position :: rest ->
+                Occupant.toMaybe position.occupant
+                    |> Maybe.andThen
+                        (\( player, _ ) ->
+                            rec position.occupant [ position ] rest
+                                |> Maybe.map (Set.fromList << List.map (.coordinate))
+                                |> Maybe.map ((,) player)
+                        )

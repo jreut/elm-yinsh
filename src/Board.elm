@@ -7,9 +7,11 @@ module Board
         , coordinates
         , filter
         , add
+        , remove
         , updateBetween
         , emptyPositions
         , raysFrom
+        , raysWithOriginFrom
         )
 
 import Dict exposing (Dict)
@@ -44,6 +46,11 @@ init radius =
 add : Coordinate -> player -> marker -> Model player marker -> Model player marker
 add coordinate player marker model =
     Dict.insert coordinate (Occupant.occupied player marker) model
+
+
+remove : Coordinate -> Model player marker -> Model player marker
+remove coordinate =
+    Dict.insert coordinate Occupant.empty
 
 
 updateBetween : (Occupant player marker -> Occupant player marker) -> Coordinate -> Coordinate -> Model player marker -> Model player marker
@@ -99,8 +106,8 @@ positions model =
         Dict.map toPosition model |> Dict.values
 
 
-rayFrom : Coordinate -> Coordinate -> Board player marker -> List (Position player marker)
-rayFrom origin ( dx, dy ) model =
+rayWithOrigin : Coordinate -> Coordinate -> Board player marker -> List (Position player marker)
+rayWithOrigin origin ( dx, dy ) model =
     let
         recRay : Coordinate -> List (Position player marker) -> List (Position player marker)
         recRay ( x, y ) acc =
@@ -116,17 +123,29 @@ rayFrom origin ( dx, dy ) model =
                             :: acc
                         )
     in
-        recRay origin [] |> List.reverse |> List.drop 1
+        recRay origin [] |> List.reverse
+
+
+rayFrom : Coordinate -> Coordinate -> Board player marker -> List (Position player marker)
+rayFrom origin coordinate model =
+    List.drop 1 <| rayWithOrigin origin coordinate model
+
+
+directions : List Coordinate
+directions =
+    [ ( 1, 1 ), ( 1, 0 ), ( 0, 1 ), ( 0, -1 ), ( -1, 0 ), ( -1, -1 ) ]
+
+
+raysWithOriginFrom : Coordinate -> Model player marker -> List (List (Position player marker))
+raysWithOriginFrom coordinate model =
+    directions
+        |> List.map (\direction -> rayWithOrigin coordinate direction model)
 
 
 raysFrom : Coordinate -> Model player marker -> List (List (Position player marker))
 raysFrom coordinate model =
-    let
-        directions =
-            [ ( 1, 1 ), ( 1, 0 ), ( 0, 1 ), ( 0, -1 ), ( -1, 0 ), ( -1, -1 ) ]
-    in
-        directions
-            |> List.map (\direction -> rayFrom coordinate direction model)
+    directions
+        |> List.map (\direction -> rayFrom coordinate direction model)
 
 
 emptyPositions : Model player marker -> Set Coordinate

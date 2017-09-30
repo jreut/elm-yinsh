@@ -3,10 +3,12 @@ module Tests.Game exposing (suite)
 import Test exposing (Test, describe, test, fuzz2)
 import Fuzz exposing (int)
 import Expect
+import Set
 import Game
     exposing
         ( jumpCoordinate
         , freedomsForRay
+        , runOfFive
         )
 import Board exposing (Position)
 import Board.Occupant exposing (Occupant, occupied, empty)
@@ -142,6 +144,35 @@ suite =
                         , positionFor (x + 2) (y + 2) empty
                         ]
                         |> Expect.equal []
+            ]
+        , describe "runOfFive"
+            [ fuzz2 int int "with a list of length 1" <|
+                \x y ->
+                    runOfFive
+                        [ positionFor x y (occupied Black Disc)
+                        ]
+                        |> Expect.equal Nothing
+            , fuzz2 int int "with a list of five discs" <|
+                \x y ->
+                    runOfFive
+                        [ positionFor x y (occupied Black Disc)
+                        , positionFor (x + 1) (y + 1) (occupied Black Disc)
+                        , positionFor (x + 2) (y + 2) (occupied Black Disc)
+                        , positionFor (x + 3) (y + 3) (occupied Black Disc)
+                        , positionFor (x + 4) (y + 4) (occupied Black Disc)
+                        ]
+                        |> Expect.equal
+                            (Just
+                                ( Black
+                                , Set.fromList
+                                    [ ( x, y )
+                                    , ( x + 1, y + 1 )
+                                    , ( x + 2, y + 2 )
+                                    , ( x + 3, y + 3 )
+                                    , ( x + 4, y + 4 )
+                                    ]
+                                )
+                            )
             ]
         ]
 
