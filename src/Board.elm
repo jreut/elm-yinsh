@@ -7,6 +7,7 @@ module Board
         , coordinates
         , filter
         , add
+        , flipBetween
         , emptyPositions
         , raysFrom
         )
@@ -42,6 +43,11 @@ init radius =
 add : Coordinate -> player -> marker -> Model player marker -> Model player marker
 add coordinate player marker model =
     Dict.insert coordinate (Occupant.occupied player marker) model
+
+
+flipBetween : Coordinate -> Coordinate -> Model player marker -> Model player marker
+flipBetween from to =
+    identity
 
 
 coordinates : Model player marker -> List Coordinate

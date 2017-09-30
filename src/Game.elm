@@ -85,7 +85,7 @@ availableMoves (State { board, toMove, phase }) =
                 DroppingRing origin ->
                     freedomsFor origin board
                         |> Set.toList
-                        |> List.map (DropRing toMove)
+                        |> List.map (DropRing toMove origin)
 
 
 ringCount : Board Player Marker -> Int
@@ -181,8 +181,8 @@ type Move
       AddRing Player Coordinate
       -- StartMovingRing player from@(x,y)
     | StartMovingRing Player Coordinate
-      -- DropRing player to@(x,y)
-    | DropRing Player Coordinate
+      -- DropRing player from@(x,y) to@(x,y)
+    | DropRing Player Coordinate Coordinate
 
 
 movesForCoordinate : Coordinate -> List Move -> List Move
@@ -196,7 +196,7 @@ movesForCoordinate coordinate =
                 StartMovingRing _ from ->
                     from == coordinate
 
-                DropRing _ to ->
+                DropRing _ _ to ->
                     to == coordinate
     in
         List.filter filter
@@ -217,8 +217,10 @@ updateBoard move board =
         StartMovingRing player from ->
             Board.add from player Disc board
 
-        DropRing player to ->
-            Board.add to player Ring board
+        DropRing player from to ->
+            board
+                |> Board.add to player Ring
+                |> Board.flipBetween from to
 
 
 moveRing : Player -> ( Int, Int ) -> ( Int, Int ) -> Board Player Marker -> Board Player Marker
