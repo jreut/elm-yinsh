@@ -58,7 +58,8 @@ view { game } =
                   )
                 ]
             ]
-            [ boardView
+            [ Html.map (always NoOp) header
+            , boardView
             , messagesView (Game.message game)
             , actionsView (Game.availableMoves game)
             ]
@@ -81,6 +82,15 @@ toMsg game { coordinate } =
         |> List.head
         |> Maybe.map MakeMove
         |> Maybe.withDefault NoOp
+
+
+header : Html Never
+header =
+    Html.header []
+        [ Html.h1 [] [ Html.text "Yinsh" ]
+        , Html.h2 [] [ Html.text "on the Web!" ]
+        , Html.h3 [] [ Html.text "v0.0.1" ]
+        ]
 
 
 messagesView : String -> Html Msg
