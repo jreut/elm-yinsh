@@ -60,6 +60,8 @@ type Phase
     = PlacingRings
     | MovingRings MovingPhase
     | RemovingRuns RemovalPhase
+      -- GameOver winner
+    | GameOver Player
 
 
 init : State
@@ -110,7 +112,10 @@ availableMoves (State { board, toMove, phase }) =
                         |> List.map (uncurry RemoveRun)
 
                 RemovingRing player ->
-                    ringsFor player board |> List.map RemoveRing
+                    ringsFor player board |> List.map (RemoveRing player)
+
+        GameOver _ ->
+            []
 
 
 ringCount : Board -> Int
@@ -190,26 +195,36 @@ jumpCoordinate xs =
 
 
 message : State -> String
-message (State { toMove, board, phase }) =
-    case phase of
-        PlacingRings ->
-            (toString toMove) ++ " to place a ring (" ++ (ringCount board |> toString) ++ " rings placed)"
+message (State { toMove, board, phase, whiteScore, blackScore }) =
+    let
+        phaseMessage =
+            case phase of
+                PlacingRings ->
+                    (toString toMove) ++ " to place a ring (" ++ (ringCount board |> toString) ++ " rings placed)"
 
-        MovingRings movingPhase ->
-            case movingPhase of
-                PlacingDisc ->
-                    (toString toMove) ++ " to move"
+                MovingRings movingPhase ->
+                    case movingPhase of
+                        PlacingDisc ->
+                            (toString toMove) ++ " to move"
 
-                DroppingRing _ ->
-                    (toString toMove) ++ " to place their ring"
+                        DroppingRing _ ->
+                            (toString toMove) ++ " to place their ring"
 
-        RemovingRuns removalPhase ->
-            case removalPhase of
-                RemovingRun ->
-                    "Removal of runs"
+                RemovingRuns removalPhase ->
+                    case removalPhase of
+                        RemovingRun ->
+                            "Removal of runs"
 
-                RemovingRing player ->
-                    (toString player) ++ " to remove a ring"
+                        RemovingRing player ->
+                            (toString player) ++ " to remove a ring"
+
+                GameOver player ->
+                    (toString player) ++ " has won"
+
+        scoreMessage =
+            (toString Black) ++ " has " ++ (toString blackScore) ++ ", " ++ (toString White) ++ " has " ++ (toString whiteScore)
+    in
+        String.join ", " [ phaseMessage, scoreMessage ]
 
 
 
@@ -224,7 +239,7 @@ type Move
       -- DropRing player from@(x,y) to@(x,y)
     | DropRing Player Coordinate Coordinate
     | RemoveRun Player (Set Coordinate)
-    | RemoveRing Coordinate
+    | RemoveRing Player Coordinate
 
 
 movesForCoordinate : Coordinate -> List Move -> List Move
@@ -244,7 +259,7 @@ movesForCoordinate coordinate =
                 RemoveRun _ _ ->
                     False
 
-                RemoveRing target ->
+                RemoveRing _ target ->
                     target == coordinate
     in
         List.filter filter
@@ -253,7 +268,9 @@ movesForCoordinate coordinate =
 update : Move -> State -> State
 update move (State state) =
     State { state | board = updateBoard move state.board }
+        |> updateScore move
         |> updatePhase move
+        |> checkScore
 
 
 updateBoard : Move -> Board -> Board
@@ -277,7 +294,7 @@ updateBoard move board =
         RemoveRun _ coordinates ->
             Set.foldl Board.remove board coordinates
 
-        RemoveRing coordinate ->
+        RemoveRing _ coordinate ->
             Board.remove coordinate board
 
 
@@ -286,6 +303,21 @@ moveRing player from to board =
     board
         |> Board.add from player Disc
         |> Board.add to player Ring
+
+
+updateScore : Move -> State -> State
+updateScore move (State state) =
+    case move of
+        RemoveRing player _ ->
+            case player of
+                White ->
+                    (State { state | whiteScore = state.whiteScore + 1 })
+
+                Black ->
+                    (State { state | blackScore = state.blackScore + 1 })
+
+        _ ->
+            (State state)
 
 
 updatePhase : Move -> State -> State
@@ -319,6 +351,23 @@ updatePhase move (State state) =
                         nextPlayer (State { state | phase = MovingRings PlacingDisc })
                     else
                         (State { state | phase = RemovingRuns RemovingRun })
+
+        GameOver player ->
+            -- unreachable, but whatever
+            (State state)
+
+
+checkScore : State -> State
+checkScore (State state) =
+    case ( state.blackScore, state.whiteScore ) of
+        ( 3, _ ) ->
+            (State { state | phase = GameOver Black })
+
+        ( _, 3 ) ->
+            (State { state | phase = GameOver White })
+
+        _ ->
+            (State state)
 
 
 nextPlayer : State -> State
