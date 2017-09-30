@@ -137,9 +137,9 @@ emptyPositions model =
 filter : (Coordinate -> player -> marker -> Bool) -> Model player marker -> Model player marker
 filter f dict =
     let
-        f_ coordinate occupant =
-            Occupant.toMaybe occupant
-                |> Maybe.map (\( player, marker ) -> f coordinate player marker)
-                |> Maybe.withDefault False
+        f_ coordinate =
+            Occupant.mapWithDefault
+                False
+                (\( player, marker ) -> f coordinate player marker)
     in
         Dict.filter f_ dict

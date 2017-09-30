@@ -107,14 +107,14 @@ ringsFor player board =
         Board.filter filter board |> Board.coordinates
 
 
-freedomsFor : ( Int, Int ) -> Board Player Marker -> Set ( Int, Int )
+freedomsFor : Coordinate -> Board Player Marker -> Set Coordinate
 freedomsFor coordinate board =
     Board.raysFrom coordinate board
         |> List.concatMap freedomsForRay
         |> Set.fromList
 
 
-freedomsForRay : List (Position Player Marker) -> List ( Int, Int )
+freedomsForRay : List (Position Player Marker) -> List Coordinate
 freedomsForRay ray =
     let
         ( empties, rest ) =
@@ -220,14 +220,14 @@ updateBoard move board =
         DropRing player from to ->
             let
                 flip =
-                    Occupant.update (\( player, marker ) -> ( Player.next player, marker ))
+                    Occupant.update (Tuple.mapFirst Player.next)
             in
                 board
                     |> Board.add to player Ring
                     |> Board.updateBetween flip from to
 
 
-moveRing : Player -> ( Int, Int ) -> ( Int, Int ) -> Board Player Marker -> Board Player Marker
+moveRing : Player -> Coordinate -> Coordinate -> Board Player Marker -> Board Player Marker
 moveRing player from to board =
     board
         |> Board.add from player Disc
@@ -242,28 +242,16 @@ updatePhase move (State state) =
                 nextPlayer (State state)
             else
                 nextPlayer
-                    (State
-                        { state
-                            | phase = MovingRings PlacingDisc
-                        }
-                    )
+                    (State { state | phase = MovingRings PlacingDisc })
 
         MovingRings movingPhase ->
             case movingPhase of
                 PlacingDisc ->
-                    (State
-                        { state
-                            | phase = MovingRings (DroppingRing (droppingRingOrigin move))
-                        }
-                    )
+                    (State { state | phase = MovingRings (DroppingRing (droppingRingOrigin move)) })
 
                 DroppingRing _ ->
                     nextPlayer
-                        (State
-                            { state
-                                | phase = MovingRings PlacingDisc
-                            }
-                        )
+                        (State { state | phase = MovingRings PlacingDisc })
 
 
 nextPlayer : State -> State
