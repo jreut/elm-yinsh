@@ -36,9 +36,14 @@ type State
         }
 
 
+type MovingPhase
+    = PlacingDisc
+    | DroppingRing Coordinate
+
+
 type Phase
     = PlacingRings
-    | MovingRings
+    | MovingRings MovingPhase
 
 
 init : State
@@ -65,15 +70,22 @@ availableMoves (State { board, toMove, phase }) =
                 |> Set.toList
                 |> List.map (AddRing toMove)
 
-        MovingRings ->
-            ringsFor toMove board
-                |> List.filter
-                    (\coordinate ->
-                        freedomsFor coordinate board
-                            |> not
-                            << Set.isEmpty
-                    )
-                |> List.map (StartMovingRing toMove)
+        MovingRings movingPhase ->
+            case movingPhase of
+                PlacingDisc ->
+                    ringsFor toMove board
+                        |> List.filter
+                            (\coordinate ->
+                                freedomsFor coordinate board
+                                    |> not
+                                    << Set.isEmpty
+                            )
+                        |> List.map (StartMovingRing toMove)
+
+                DroppingRing origin ->
+                    freedomsFor origin board
+                        |> Set.toList
+                        |> List.map (DropRing toMove)
 
 
 ringCount : Board Player Marker -> Int
@@ -151,8 +163,13 @@ message (State { toMove, board, phase }) =
         PlacingRings ->
             (toString toMove) ++ " to place a ring (" ++ (ringCount board |> toString) ++ " rings placed)"
 
-        MovingRings ->
-            (toString toMove) ++ " to move"
+        MovingRings movingPhase ->
+            case movingPhase of
+                PlacingDisc ->
+                    (toString toMove) ++ " to move"
+
+                DroppingRing _ ->
+                    (toString toMove) ++ " to place their ring"
 
 
 
@@ -162,10 +179,10 @@ message (State { toMove, board, phase }) =
 type Move
     = -- AddRing player at@(x,y)
       AddRing Player Coordinate
-      -- MoveRing player from@(x,y) to@(x,y)
-      -- | MoveRing Player Coordinate Coordinate
       -- StartMovingRing player from@(x,y)
     | StartMovingRing Player Coordinate
+      -- DropRing player to@(x,y)
+    | DropRing Player Coordinate
 
 
 movesForCoordinate : Coordinate -> List Move -> List Move
@@ -178,13 +195,17 @@ movesForCoordinate coordinate =
 
                 StartMovingRing _ from ->
                     from == coordinate
+
+                DropRing _ to ->
+                    to == coordinate
     in
         List.filter filter
 
 
 update : Move -> State -> State
 update move (State state) =
-    State { state | board = updateBoard move state.board } |> updatePhase
+    State { state | board = updateBoard move state.board }
+        |> updatePhase move
 
 
 updateBoard : Move -> Board Player Marker -> Board Player Marker
@@ -196,6 +217,9 @@ updateBoard move board =
         StartMovingRing player from ->
             Board.add from player Disc board
 
+        DropRing player to ->
+            Board.add to player Ring board
+
 
 moveRing : Player -> ( Int, Int ) -> ( Int, Int ) -> Board Player Marker -> Board Player Marker
 moveRing player from to board =
@@ -204,8 +228,8 @@ moveRing player from to board =
         |> Board.add to player Ring
 
 
-updatePhase : State -> State
-updatePhase (State state) =
+updatePhase : Move -> State -> State
+updatePhase move (State state) =
     case state.phase of
         PlacingRings ->
             if ringCount state.board < 10 then
@@ -214,14 +238,38 @@ updatePhase (State state) =
                 nextPlayer
                     (State
                         { state
-                            | phase = MovingRings
+                            | phase = MovingRings PlacingDisc
                         }
                     )
 
-        MovingRings ->
-            nextPlayer (State state)
+        MovingRings movingPhase ->
+            case movingPhase of
+                PlacingDisc ->
+                    (State
+                        { state
+                            | phase = MovingRings (DroppingRing (droppingRingOrigin move))
+                        }
+                    )
+
+                DroppingRing _ ->
+                    nextPlayer
+                        (State
+                            { state
+                                | phase = MovingRings PlacingDisc
+                            }
+                        )
 
 
 nextPlayer : State -> State
 nextPlayer (State state) =
     State { state | toMove = Player.next state.toMove }
+
+
+droppingRingOrigin : Move -> Coordinate
+droppingRingOrigin move =
+    case move of
+        StartMovingRing _ origin ->
+            origin
+
+        _ ->
+            Debug.crash ("This should have been a " ++ (toString StartMovingRing))
