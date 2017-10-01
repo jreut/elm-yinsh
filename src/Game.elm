@@ -1,28 +1,29 @@
 module Game
     exposing
-        ( State
-        , Move
-        , init
-        , update
-        , board
-        , message
+        ( Move
+        , State
         , availableMoves
+        , board
+        , freedomsForRay
+        , init
+        , jumpCoordinate
+        , message
         , movesForCoordinate
           -- for testing
-        , jumpCoordinate
-        , freedomsForRay
         , runOfFive
+        , scores
+        , update
         )
 
-import Dict exposing (Dict)
-import Set exposing (Set)
 import Board
 import Board.Occupant as Occupant exposing (Occupant)
 import Coordinate.Hexagonal exposing (Coordinate)
-import Player exposing (Player(..))
-import Marker exposing (Marker(..))
+import Dict exposing (Dict)
 import Game.Run as Run exposing (Run)
 import List.Extra exposing (span)
+import Marker exposing (Marker(..))
+import Player exposing (Player(..))
+import Set exposing (Set)
 
 
 type alias Board =
@@ -124,8 +125,8 @@ ringCount board =
         filter coord player marker =
             Ring == marker
     in
-        Board.filter filter board
-            |> Dict.size
+    Board.filter filter board
+        |> Dict.size
 
 
 ringsFor : Player -> Board -> List Coordinate
@@ -134,7 +135,7 @@ ringsFor player board =
         filter coord player_ marker =
             player == player_ && Ring == marker
     in
-        Board.filter filter board |> Board.coordinates
+    Board.filter filter board |> Board.coordinates
 
 
 discs : Board -> List Coordinate
@@ -142,6 +143,11 @@ discs board =
     board
         |> Board.filter (\coord player marker -> Disc == marker)
         |> Board.coordinates
+
+
+scores : State -> { black : Int, white : Int }
+scores (State state) =
+    { black = state.blackScore, white = state.whiteScore }
 
 
 freedomsFor : Coordinate -> Board -> Set Coordinate
@@ -167,7 +173,7 @@ freedomsForRay ray =
                 Just position ->
                     empties ++ [ position ]
     in
-        List.map (.coordinate) positions
+    List.map .coordinate positions
 
 
 jumpCoordinate : List Position -> Maybe Position
@@ -200,15 +206,15 @@ message (State { toMove, board, phase, whiteScore, blackScore }) =
         phaseMessage =
             case phase of
                 PlacingRings ->
-                    (toString toMove) ++ " to place a ring (" ++ (ringCount board |> toString) ++ " rings placed)"
+                    toString toMove ++ " to place a ring (" ++ (ringCount board |> toString) ++ " rings placed)"
 
                 MovingRings movingPhase ->
                     case movingPhase of
                         PlacingDisc ->
-                            (toString toMove) ++ " to move"
+                            toString toMove ++ " to move"
 
                         DroppingRing _ ->
-                            (toString toMove) ++ " to place their ring"
+                            toString toMove ++ " to place their ring"
 
                 RemovingRuns removalPhase ->
                     case removalPhase of
@@ -216,15 +222,15 @@ message (State { toMove, board, phase, whiteScore, blackScore }) =
                             "Removal of runs"
 
                         RemovingRing player ->
-                            (toString player) ++ " to remove a ring"
+                            toString player ++ " to remove a ring"
 
                 GameOver player ->
-                    (toString player) ++ " has won"
+                    toString player ++ " has won"
 
         scoreMessage =
-            (toString Black) ++ " has " ++ (toString blackScore) ++ ", " ++ (toString White) ++ " has " ++ (toString whiteScore)
+            toString Black ++ " has " ++ toString blackScore ++ ", " ++ toString White ++ " has " ++ toString whiteScore
     in
-        String.join ", " [ phaseMessage, scoreMessage ]
+    String.join ", " [ phaseMessage, scoreMessage ]
 
 
 
@@ -262,7 +268,7 @@ movesForCoordinate coordinate =
                 RemoveRing _ target ->
                     target == coordinate
     in
-        List.filter filter
+    List.filter filter
 
 
 update : Move -> State -> State
@@ -287,9 +293,9 @@ updateBoard move board =
                 flip =
                     Occupant.update (Tuple.mapFirst Player.next)
             in
-                board
-                    |> Board.add to player Ring
-                    |> Board.updateBetween flip from to
+            board
+                |> Board.add to player Ring
+                |> Board.updateBetween flip from to
 
         RemoveRun run ->
             Set.foldl Board.remove board (Run.coordinates run)
@@ -311,13 +317,13 @@ updateScore move (State state) =
         RemoveRing player _ ->
             case player of
                 White ->
-                    (State { state | whiteScore = state.whiteScore + 1 })
+                    State { state | whiteScore = state.whiteScore + 1 }
 
                 Black ->
-                    (State { state | blackScore = state.blackScore + 1 })
+                    State { state | blackScore = state.blackScore + 1 }
 
         _ ->
-            (State state)
+            State state
 
 
 updatePhase : Move -> State -> State
@@ -333,41 +339,41 @@ updatePhase move (State state) =
         MovingRings movingPhase ->
             case movingPhase of
                 PlacingDisc ->
-                    (State { state | phase = MovingRings (DroppingRing (droppingRingOrigin move)) })
+                    State { state | phase = MovingRings (DroppingRing (droppingRingOrigin move)) }
 
                 DroppingRing _ ->
                     if List.isEmpty <| runsToRemove state.board then
                         nextPlayer (State { state | phase = MovingRings PlacingDisc })
                     else
-                        (State { state | phase = RemovingRuns RemovingRun })
+                        State { state | phase = RemovingRuns RemovingRun }
 
         RemovingRuns removalPhase ->
             case removalPhase of
                 RemovingRun ->
-                    (State { state | phase = RemovingRuns (RemovingRing (removingRunPlayer move)) })
+                    State { state | phase = RemovingRuns (RemovingRing (removingRunPlayer move)) }
 
                 RemovingRing _ ->
                     if List.isEmpty <| runsToRemove state.board then
                         nextPlayer (State { state | phase = MovingRings PlacingDisc })
                     else
-                        (State { state | phase = RemovingRuns RemovingRun })
+                        State { state | phase = RemovingRuns RemovingRun }
 
         GameOver player ->
             -- unreachable, but whatever
-            (State state)
+            State state
 
 
 checkScore : State -> State
 checkScore (State state) =
     case ( state.blackScore, state.whiteScore ) of
         ( 3, _ ) ->
-            (State { state | phase = GameOver Black })
+            State { state | phase = GameOver Black }
 
         ( _, 3 ) ->
-            (State { state | phase = GameOver White })
+            State { state | phase = GameOver White }
 
         _ ->
-            (State state)
+            State state
 
 
 nextPlayer : State -> State
@@ -382,7 +388,7 @@ droppingRingOrigin move =
             origin
 
         _ ->
-            Debug.crash ("This should have been a " ++ (toString StartMovingRing))
+            Debug.crash ("This should have been a " ++ toString StartMovingRing)
 
 
 removingRunPlayer : Move -> Player
@@ -392,7 +398,7 @@ removingRunPlayer move =
             Run.player run
 
         _ ->
-            Debug.crash ("This should have been a " ++ (toString RemoveRun))
+            Debug.crash ("This should have been a " ++ toString RemoveRun)
 
 
 runsToRemove : Board -> List Run
@@ -424,15 +430,15 @@ runOfFive positions =
                     [] ->
                         Nothing
     in
-        case positions of
-            [] ->
-                Nothing
+    case positions of
+        [] ->
+            Nothing
 
-            position :: rest ->
-                Occupant.toMaybe position.occupant
-                    |> Maybe.andThen
-                        (\( player, _ ) ->
-                            rec position.occupant [ position ] rest
-                                |> Maybe.map (Set.fromList << List.map (.coordinate))
-                                |> Maybe.map (Run.init player)
-                        )
+        position :: rest ->
+            Occupant.toMaybe position.occupant
+                |> Maybe.andThen
+                    (\( player, _ ) ->
+                        rec position.occupant [ position ] rest
+                            |> Maybe.map (Set.fromList << List.map .coordinate)
+                            |> Maybe.map (Run.init player)
+                    )
