@@ -1,14 +1,14 @@
 module Main exposing (main)
 
-import Html exposing (Html)
-import Html.Attributes exposing (style, href)
-import Svg exposing (Svg)
 import Board exposing (Board)
 import Game
+import Html exposing (Html)
+import Html.Attributes exposing (href, style)
+import Marker exposing (Marker)
+import Player exposing (Player)
+import Svg exposing (Svg)
 import View.Board as BoardView
 import View.Occupant as OccupantView
-import Player exposing (Player)
-import Marker exposing (Marker)
 
 
 main : Program Never Model Msg
@@ -50,21 +50,21 @@ view { game } =
         boardView =
             BoardView.view config (game |> Game.board |> Board.positions)
     in
-        Html.main_
-            [ style
-                [ ( "backgroundColor", "lightblue" )
-                , ( "display", "flex" )
-                , ( "flex-direction", "row" )
-                , ( "width", "100%" )
-                , ( "width", "100vw" )
-                , ( "height", "100%" )
-                , ( "height", "100vh" )
-                ]
+    Html.main_
+        [ style
+            [ ( "backgroundColor", "lightblue" )
+            , ( "display", "flex" )
+            , ( "flex-direction", "row" )
+            , ( "width", "100%" )
+            , ( "width", "100vw" )
+            , ( "height", "100%" )
+            , ( "height", "100vh" )
             ]
-            [ Html.map (always NoOp) header
-            , boardView
-            , messagesView (Game.message game)
-            ]
+        ]
+        [ Html.map (always NoOp) header
+        , boardView
+        , messagesView game
+        ]
 
 
 toSvg : Game.State -> Board.Position Player Marker -> Svg Msg
@@ -75,7 +75,7 @@ toSvg game position =
                 |> not
                 << List.isEmpty
     in
-        OccupantView.view shouldHighlight position
+    OccupantView.view shouldHighlight position
 
 
 toMsg : Game.State -> Board.Position Player Marker -> Msg
@@ -102,19 +102,45 @@ header =
         ]
 
 
-messagesView : String -> Html Msg
-messagesView message =
+messagesView : Game.State -> Html Msg
+messagesView game =
+    let
+        { black, white } =
+            Game.scores game
+    in
     Html.div
         [ Html.Attributes.style
             []
         ]
-        [ Html.p [] [ Html.text message ]
+        [ Html.p [] [ Html.text (Game.message game) ]
         , Html.p [] [ Html.em [] [ Html.text "Click on any highlighted position to move." ] ]
         , Html.p []
             [ Html.a [ href "http://www.gipf.com/yinsh/" ] [ Html.text "Learn more" ]
             , Html.text " about the game."
             ]
+        , Html.div []
+            [ Html.div [] (scoreMarkers black "black")
+            , Html.div [] (scoreMarkers white "white")
+            ]
         ]
+
+
+scoreMarker : String -> Html Msg
+scoreMarker color =
+    Html.div
+        [ style
+            [ ( "width", "1rem" )
+            , ( "height", "1rem" )
+            , ( "background", color )
+            , ( "display", "inline-block" )
+            ]
+        ]
+        []
+
+
+scoreMarkers : Int -> String -> List (Html Msg)
+scoreMarkers score color =
+    List.repeat score (scoreMarker color)
 
 
 
