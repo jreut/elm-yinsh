@@ -31,7 +31,7 @@ view (Config { toSvg, toMsg }) data =
     let
         container =
             svg
-                [ viewBox "-6 -6 12 12"
+                [ viewBox "-10 -10 20 20"
                 , style "flex-basis: 70%"
                 ]
 

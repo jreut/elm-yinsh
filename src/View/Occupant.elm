@@ -7,6 +7,10 @@ import Svg.Attributes
         ( cx
         , cy
         , r
+        , x1
+        , x2
+        , y1
+        , y2
         , fill
         , fillOpacity
         , stroke
@@ -21,39 +25,14 @@ import Board.Occupant exposing (Occupant)
 view : Bool -> Position Player Marker -> Svg msg
 view shouldHighlight { coordinate, occupant } =
     let
-        cartesian : ( Float, Float )
-        cartesian =
-            toCartesian 1 coordinate
-
-        toCoordinate : Int -> String
-        toCoordinate =
-            toString << toFloat
+        ( x, y ) =
+            toCartesian 2 coordinate
 
         baseAttrs : List (Svg.Attribute msg)
         baseAttrs =
-            let
-                ( x, y ) =
-                    cartesian
-            in
-                [ cx (toString x)
-                , cy (toString y)
-                ]
-
-        emptyAttrs : List (Svg.Attribute msg)
-        emptyAttrs =
-            [ r "1%", fill "grey" ]
-
-        ringAttrs : String -> List (Svg.Attribute msg)
-        ringAttrs color =
-            [ r "4%"
-            , fill "none"
-            , stroke color
-            , strokeWidth "1%"
+            [ cx (toString x)
+            , cy (toString y)
             ]
-
-        discAttrs : String -> List (Svg.Attribute msg)
-        discAttrs color =
-            [ r "3%", fill color ]
 
         makeCircle : List (Svg.Attribute msg) -> Svg msg
         makeCircle attrs =
@@ -62,7 +41,7 @@ view shouldHighlight { coordinate, occupant } =
         subject =
             case Board.Occupant.toMaybe occupant of
                 Nothing ->
-                    makeCircle emptyAttrs
+                    makeCircle []
 
                 Just ( player, marker ) ->
                     let
@@ -82,12 +61,14 @@ view shouldHighlight { coordinate, occupant } =
     in
         if shouldHighlight then
             Svg.g []
-                [ subject
+                [ lines ( x, y )
+                , subject
                 , highlight baseAttrs
                 ]
         else
             Svg.g []
-                [ subject
+                [ lines ( x, y )
+                , subject
                 ]
 
 
@@ -97,7 +78,43 @@ highlight baseAttrs =
         (baseAttrs
             ++ [ r "3%"
                , fill "yellow"
-               , fillOpacity ".5"
+               , fillOpacity ".4"
                ]
         )
         []
+
+
+lines : ( Float, Float ) -> Svg msg
+lines ( x, y ) =
+    let
+        line x_ y_ =
+            Svg.line
+                [ x1 (toString (x - x_))
+                , y1 (toString (y - y_))
+                , x2 (toString (x + x_))
+                , y2 (toString (y + y_))
+                , stroke "darkslategrey"
+                , strokeWidth "0.3%"
+                ]
+                []
+    in
+        Svg.g
+            []
+            [ line 0 1
+            , line ((sqrt 3) / 2) (1 / 2)
+            , line ((sqrt 3) / -2) (1 / 2)
+            ]
+
+
+ringAttrs : String -> List (Svg.Attribute msg)
+ringAttrs color =
+    [ r "4%"
+    , fill "none"
+    , stroke color
+    , strokeWidth "1%"
+    ]
+
+
+discAttrs : String -> List (Svg.Attribute msg)
+discAttrs color =
+    [ r "3%", fill color ]
