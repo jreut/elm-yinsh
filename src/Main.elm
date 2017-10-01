@@ -93,7 +93,7 @@ header =
         ]
         [ Html.h1 [] [ Html.text "Yinsh" ]
         , Html.h2 [] [ Html.text "on the Web!" ]
-        , Html.h3 [] [ Html.text "v0.0.2" ]
+        , Html.h3 [] [ Html.text "v0.0.3" ]
         , Html.p []
             [ Html.a [ href "//github.com/jreut/elm-yinsh" ]
                 [ Html.text "source code"
