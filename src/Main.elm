@@ -94,6 +94,11 @@ header =
         [ Html.h1 [] [ Html.text "Yinsh" ]
         , Html.h2 [] [ Html.text "on the Web!" ]
         , Html.h3 [] [ Html.text "v0.0.2" ]
+        , Html.p []
+            [ Html.a [ href "//github.com/jreut/elm-yinsh" ]
+                [ Html.text "source code"
+                ]
+            ]
         ]
 
 
@@ -106,8 +111,8 @@ messagesView message =
         [ Html.p [] [ Html.text message ]
         , Html.p [] [ Html.em [] [ Html.text "Click on any highlighted position to move." ] ]
         , Html.p []
-            [ Html.a [ href "http://www.gipf.com/yinsh/" ] [ Html.text "Click here" ]
-            , Html.text " to learn more about the game."
+            [ Html.a [ href "http://www.gipf.com/yinsh/" ] [ Html.text "Learn more" ]
+            , Html.text " about the game."
             ]
         ]
 
