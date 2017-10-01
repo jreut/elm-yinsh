@@ -21,6 +21,7 @@ import Board.Occupant as Occupant exposing (Occupant)
 import Coordinate.Hexagonal exposing (Coordinate)
 import Player exposing (Player(..))
 import Marker exposing (Marker(..))
+import Game.Run as Run exposing (Run)
 import List.Extra exposing (span)
 
 
@@ -108,8 +109,7 @@ availableMoves (State { board, toMove, phase }) =
         RemovingRuns removalPhase ->
             case removalPhase of
                 RemovingRun ->
-                    runsToRemove board
-                        |> List.map (uncurry RemoveRun)
+                    runsToRemove board |> List.map RemoveRun
 
                 RemovingRing player ->
                     ringsFor player board |> List.map (RemoveRing player)
@@ -238,7 +238,7 @@ type Move
     | StartMovingRing Player Coordinate
       -- DropRing player from@(x,y) to@(x,y)
     | DropRing Player Coordinate Coordinate
-    | RemoveRun Player (Set Coordinate)
+    | RemoveRun Run
     | RemoveRing Player Coordinate
 
 
@@ -256,8 +256,8 @@ movesForCoordinate coordinate =
                 DropRing _ _ to ->
                     to == coordinate
 
-                RemoveRun _ _ ->
-                    False
+                RemoveRun run ->
+                    Run.coordinates run |> Set.member coordinate
 
                 RemoveRing _ target ->
                     target == coordinate
@@ -291,8 +291,8 @@ updateBoard move board =
                     |> Board.add to player Ring
                     |> Board.updateBetween flip from to
 
-        RemoveRun _ coordinates ->
-            Set.foldl Board.remove board coordinates
+        RemoveRun run ->
+            Set.foldl Board.remove board (Run.coordinates run)
 
         RemoveRing _ coordinate ->
             Board.remove coordinate board
@@ -388,14 +388,14 @@ droppingRingOrigin move =
 removingRunPlayer : Move -> Player
 removingRunPlayer move =
     case move of
-        RemoveRun player _ ->
-            player
+        RemoveRun run ->
+            Run.player run
 
         _ ->
             Debug.crash ("This should have been a " ++ (toString RemoveRun))
 
 
-runsToRemove : Board -> List ( Player, Set Coordinate )
+runsToRemove : Board -> List Run
 runsToRemove board =
     board
         |> discs
@@ -404,9 +404,10 @@ runsToRemove board =
                 Board.raysWithOriginFrom coordinate board
                     |> List.filterMap runOfFive
             )
+        |> Run.unique
 
 
-runOfFive : List Position -> Maybe ( Player, Set Coordinate )
+runOfFive : List Position -> Maybe Run
 runOfFive positions =
     let
         rec occupant acc rest =
@@ -433,5 +434,5 @@ runOfFive positions =
                         (\( player, _ ) ->
                             rec position.occupant [ position ] rest
                                 |> Maybe.map (Set.fromList << List.map (.coordinate))
-                                |> Maybe.map ((,) player)
+                                |> Maybe.map (Run.init player)
                         )

@@ -12,9 +12,9 @@ yarn watch
 
 ## TODO
 
-- de-dupe run removal (can't use `Set (Player, Set Coordinate)` because `Player` is not comparable)
 - figure out a better way to do the phase/move system
 - performance (ha.)
+- style
 
 [yinsh]: http://www.gipf.com/yinsh/
 [rules]: https://web.archive.org/web/20161118010122/http://www.gipf.com/yinsh/index.html

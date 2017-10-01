@@ -61,7 +61,7 @@ view { game } =
             [ Html.map (always NoOp) header
             , boardView
             , messagesView (Game.message game)
-            , actionsView (Game.availableMoves game)
+              -- , actionsView (Game.availableMoves game)
             ]
 
 
