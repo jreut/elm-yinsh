@@ -53,15 +53,18 @@ view { game } =
     in
         Html.main_
             [ style
-                [ ( "backgroundColor"
-                  , "lightblue"
-                  )
+                [ ( "backgroundColor", "lightblue" )
+                , ( "display", "flex" )
+                , ( "flex-direction", "row" )
+                , ( "width", "100%" )
+                , ( "width", "100vw" )
+                , ( "height", "100%" )
+                , ( "height", "100vh" )
                 ]
             ]
             [ Html.map (always NoOp) header
             , boardView
             , messagesView (Game.message game)
-              -- , actionsView (Game.availableMoves game)
             ]
 
 
@@ -86,10 +89,12 @@ toMsg game { coordinate } =
 
 header : Html Never
 header =
-    Html.header []
+    Html.header
+        [ style [ ( "flex-basis", "20%" ) ]
+        ]
         [ Html.h1 [] [ Html.text "Yinsh" ]
         , Html.h2 [] [ Html.text "on the Web!" ]
-        , Html.h3 [] [ Html.text "v0.0.1" ]
+        , Html.h3 [] [ Html.text "v0.0.2" ]
         ]
 
 
@@ -97,23 +102,11 @@ messagesView : String -> Html Msg
 messagesView message =
     Html.div
         [ Html.Attributes.style
-            [ ( "width", "100vw" )
-            , ( "height", "10vh" )
-            ]
+            []
         ]
-        [ Html.text message ]
-
-
-actionsView : List Game.Move -> Html Msg
-actionsView moves =
-    let
-        makeButton =
-            \move ->
-                Html.button
-                    [ onClick (MakeMove move) ]
-                    [ Html.text (toString move) ]
-    in
-        Html.div [] (List.map makeButton moves)
+        [ Html.p [] [ Html.text message ]
+        , Html.p [] [ Html.em [] [ Html.text "Click on any highlighted position to move." ] ]
+        ]
 
 
 

@@ -5,7 +5,7 @@ module View.Board
         )
 
 import Svg exposing (Svg, svg, g)
-import Svg.Attributes exposing (viewBox, width, height)
+import Svg.Attributes exposing (viewBox, style)
 import Svg.Events exposing (onClick)
 import Html exposing (Html)
 
@@ -32,8 +32,7 @@ view (Config { toSvg, toMsg }) data =
         container =
             svg
                 [ viewBox "-6 -6 12 12"
-                , height "80vh"
-                , width "100vw"
+                , style "flex-basis: 70%"
                 ]
 
         makeNode datum =
