@@ -80,22 +80,24 @@ view shouldHighlight { coordinate, occupant } =
                             |> makeAttrs
                             |> makeCircle
     in
-        subject |> withHighlight shouldHighlight baseAttrs
+        if shouldHighlight then
+            Svg.g []
+                [ subject
+                , highlight baseAttrs
+                ]
+        else
+            Svg.g []
+                [ subject
+                ]
 
 
-withHighlight : Bool -> List (Svg.Attribute msg) -> Svg msg -> Svg msg
-withHighlight doIt baseAttrs svg =
-    if doIt then
-        Svg.g []
-            [ svg
-            , Svg.circle
-                (baseAttrs
-                    ++ [ r "3%"
-                       , fill "yellow"
-                       , fillOpacity ".5"
-                       ]
-                )
-                []
-            ]
-    else
-        svg
+highlight : List (Svg.Attribute msg) -> Svg msg
+highlight baseAttrs =
+    Svg.circle
+        (baseAttrs
+            ++ [ r "3%"
+               , fill "yellow"
+               , fillOpacity ".5"
+               ]
+        )
+        []
