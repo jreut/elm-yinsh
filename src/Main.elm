@@ -1,8 +1,7 @@
 module Main exposing (main)
 
 import Html exposing (Html)
-import Html.Attributes exposing (style)
-import Html.Events exposing (onClick)
+import Html.Attributes exposing (style, href)
 import Svg exposing (Svg)
 import Board exposing (Board)
 import Game
@@ -106,6 +105,10 @@ messagesView message =
         ]
         [ Html.p [] [ Html.text message ]
         , Html.p [] [ Html.em [] [ Html.text "Click on any highlighted position to move." ] ]
+        , Html.p []
+            [ Html.a [ href "http://www.gipf.com/yinsh/" ] [ Html.text "Click here" ]
+            , Html.text " to learn more about the game."
+            ]
         ]
 
 
