@@ -3,7 +3,9 @@
     "watch": "elm live --open src/Main.elm -- --debug",
     "prebuild": "yarn clean && mkdir dist",
     "build": "elm make src/Main.elm --output dist/index.html",
-    "clean": "test -d dist && rm -r dist || echo no cleanup required"
+    "clean": "test -d dist && rm -r dist || echo no cleanup required",
+    "predeploy:production": "yarn build",
+    "deploy:production": "stout deploy -env production"
   },
   "devDependencies": {
     "elm": "^0.18.0",
