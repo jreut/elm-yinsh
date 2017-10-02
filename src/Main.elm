@@ -9,6 +9,7 @@ import Player exposing (Player)
 import Svg exposing (Svg)
 import View.Board as BoardView
 import View.Occupant as OccupantView
+import View.Score as ScoreView
 
 
 main : Program Never Model Msg
@@ -104,10 +105,6 @@ header =
 
 messagesView : Game.State -> Html Msg
 messagesView game =
-    let
-        { black, white } =
-            Game.scores game
-    in
     Html.div
         [ Html.Attributes.style
             []
@@ -118,29 +115,8 @@ messagesView game =
             [ Html.a [ href "http://www.gipf.com/yinsh/" ] [ Html.text "Learn more" ]
             , Html.text " about the game."
             ]
-        , Html.div []
-            [ Html.div [] (scoreMarkers black "black")
-            , Html.div [] (scoreMarkers white "white")
-            ]
+        , ScoreView.view (Game.scores game)
         ]
-
-
-scoreMarker : String -> Html Msg
-scoreMarker color =
-    Html.div
-        [ style
-            [ ( "width", "1rem" )
-            , ( "height", "1rem" )
-            , ( "background", color )
-            , ( "display", "inline-block" )
-            ]
-        ]
-        []
-
-
-scoreMarkers : Int -> String -> List (Html Msg)
-scoreMarkers score color =
-    List.repeat score (scoreMarker color)
 
 
 
