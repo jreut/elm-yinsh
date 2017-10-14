@@ -15,7 +15,6 @@ yarn watch
 - figure out a better way to do the phase/move system
 - performance (ha.)
 - presentation
-  - draw rings removed from the board (WIP, thanks @Thrillberg!)
   - write brief instructions
   - improve game message
   - hover state over move
