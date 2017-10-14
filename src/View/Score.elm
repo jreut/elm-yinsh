@@ -1,43 +1,21 @@
 module View.Score exposing (view)
 
+import Marker exposing (Marker(..))
 import Svg exposing (Svg, circle, g, svg)
 import Svg.Attributes exposing (cx, cy, fill, height, r, stroke, strokeWidth, style, viewBox, width)
 
 
-scoreMarker : String -> Int -> Int -> Svg msg
-scoreMarker color y x =
-    let
-        baseAttrs : List (Svg.Attribute msg)
-        baseAttrs =
-            [ cx (toString x)
-            , cy (toString y)
-            , r "5.5%"
-            , stroke color
-            , fill "none"
-            , strokeWidth "1.5%"
-            , width "100"
-            , height "100"
-            ]
-
-        makeCircle : List (Svg.Attribute msg) -> Svg msg
-        makeCircle attrs =
-            Svg.circle baseAttrs []
-    in
-    circle baseAttrs []
-
-
 scoreMarkers : Int -> String -> Int -> List (Svg msg)
 scoreMarkers score color y =
-    if score > 0 then
-        let
-            indices =
-                List.drop 1 (List.range 0 score)
-        in
-        List.map
-            (scoreMarker color y)
-            indices
-    else
-        []
+    let
+        indices =
+            List.range 1 score
+    in
+    List.map
+        (\x ->
+            Marker.view "5.5%" ( toFloat x, toFloat y ) color Ring
+        )
+        indices
 
 
 view : { black : Int, white : Int } -> Svg msg
