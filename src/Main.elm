@@ -42,46 +42,49 @@ type alias Model =
 view : Model -> Html Msg
 view { game } =
     let
+        availableMoves =
+            Game.availableMoves game
+
         config =
             BoardView.config
-                { toSvg = toSvg game
-                , toMsg = toMsg game
+                { toSvg = toSvg availableMoves
+                , toMsg = toMsg availableMoves
                 }
 
         boardView =
             BoardView.view config (game |> Game.board |> Board.positions)
     in
-    Html.main_
-        [ style
-            [ ( "backgroundColor", "lightblue" )
-            , ( "display", "flex" )
-            , ( "flex-direction", "row" )
-            , ( "width", "100%" )
-            , ( "width", "100vw" )
-            , ( "height", "100%" )
-            , ( "height", "100vh" )
+        Html.main_
+            [ style
+                [ ( "backgroundColor", "lightblue" )
+                , ( "display", "flex" )
+                , ( "flex-direction", "row" )
+                , ( "width", "100%" )
+                , ( "width", "100vw" )
+                , ( "height", "100%" )
+                , ( "height", "100vh" )
+                ]
             ]
-        ]
-        [ Html.map (always NoOp) header
-        , boardView
-        , messagesView game
-        ]
+            [ Html.map (always NoOp) header
+            , boardView
+            , messagesView game
+            ]
 
 
-toSvg : Game.State -> Board.Position Player Marker -> Svg Msg
-toSvg game position =
+toSvg : List Game.Move -> Board.Position Player Marker -> Svg Msg
+toSvg availableMoves position =
     let
         shouldHighlight =
-            Game.movesForCoordinate position.coordinate (Game.availableMoves game)
+            Game.movesForCoordinate position.coordinate availableMoves
                 |> not
                 << List.isEmpty
     in
-    OccupantView.view shouldHighlight position
+        OccupantView.view shouldHighlight position
 
 
-toMsg : Game.State -> Board.Position Player Marker -> Msg
-toMsg game { coordinate } =
-    Game.movesForCoordinate coordinate (Game.availableMoves game)
+toMsg : List Game.Move -> Board.Position Player Marker -> Msg
+toMsg availableMoves { coordinate } =
+    Game.movesForCoordinate coordinate availableMoves
         |> List.head
         |> Maybe.map MakeMove
         |> Maybe.withDefault NoOp
