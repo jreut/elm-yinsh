@@ -48,11 +48,6 @@ type State
         }
 
 
-type MovingPhase
-    = PlacingDisc
-    | DroppingRing Coordinate
-
-
 type RemovalPhase
     = RemovingRun
     | RemovingRing Player
@@ -60,7 +55,7 @@ type RemovalPhase
 
 type Phase
     = PlacingRings
-    | MovingRings MovingPhase
+    | MovingRings
     | RemovingRuns RemovalPhase
       -- GameOver winner
     | GameOver Player
@@ -90,22 +85,14 @@ availableMoves (State { board, toMove, phase }) =
                 |> Set.toList
                 |> List.map AddRing
 
-        MovingRings movingPhase ->
-            case movingPhase of
-                PlacingDisc ->
-                    ringsFor toMove board
-                        |> List.filter
-                            (\coordinate ->
-                                freedomsFor coordinate board
-                                    |> not
-                                    << Set.isEmpty
-                            )
-                        |> List.map StartMovingRing
-
-                DroppingRing origin ->
-                    freedomsFor origin board
-                        |> Set.toList
-                        |> List.map (DropRing origin)
+        MovingRings ->
+            ringsFor toMove board
+                |> List.concatMap
+                    (\from ->
+                        freedomsFor from board
+                            |> Set.toList
+                            |> List.map (MoveRing from)
+                    )
 
         RemovingRuns removalPhase ->
             case removalPhase of
@@ -208,13 +195,8 @@ message (State { toMove, board, phase, whiteScore, blackScore }) =
                 PlacingRings ->
                     toString toMove ++ " to place a ring (" ++ (ringCount board |> toString) ++ " rings placed)"
 
-                MovingRings movingPhase ->
-                    case movingPhase of
-                        PlacingDisc ->
-                            toString toMove ++ " to move"
-
-                        DroppingRing _ ->
-                            toString toMove ++ " to place their ring"
+                MovingRings ->
+                    toString toMove ++ " to move"
 
                 RemovingRuns removalPhase ->
                     case removalPhase of
@@ -240,10 +222,8 @@ message (State { toMove, board, phase, whiteScore, blackScore }) =
 type Move
     = -- AddRing at@(x,y)
       AddRing Coordinate
-      -- StartMovingRing from@(x,y)
-    | StartMovingRing Coordinate
-      -- DropRing from@(x,y) to@(x,y)
-    | DropRing Coordinate Coordinate
+      -- MoveRing from@(x,y) to@(x,y)
+    | MoveRing Coordinate Coordinate
     | RemoveRun Run
     | RemoveRing Player Coordinate
 
@@ -256,11 +236,8 @@ movesForCoordinate coordinate =
                 AddRing target ->
                     target == coordinate
 
-                StartMovingRing from ->
+                MoveRing from _ ->
                     from == coordinate
-
-                DropRing _ to ->
-                    to == coordinate
 
                 RemoveRun run ->
                     Run.coordinates run |> Set.member coordinate
@@ -285,15 +262,12 @@ updateBoard toMove move board =
         AddRing coordinate ->
             Board.add coordinate toMove Ring board
 
-        StartMovingRing from ->
-            Board.add from toMove Disc board
-
-        DropRing from to ->
+        MoveRing from to ->
             let
                 flip =
                     Occupant.update (Tuple.mapFirst Player.next)
             in
-                board
+                Board.add from toMove Disc board
                     |> Board.add to toMove Ring
                     |> Board.updateBetween flip from to
 
@@ -334,18 +308,13 @@ updatePhase move (State state) =
                 nextPlayer (State state)
             else
                 nextPlayer
-                    (State { state | phase = MovingRings PlacingDisc })
+                    (State { state | phase = MovingRings })
 
-        MovingRings movingPhase ->
-            case movingPhase of
-                PlacingDisc ->
-                    State { state | phase = MovingRings (DroppingRing (droppingRingOrigin move)) }
-
-                DroppingRing _ ->
-                    if List.isEmpty <| runsToRemove state.board then
-                        nextPlayer (State { state | phase = MovingRings PlacingDisc })
-                    else
-                        State { state | phase = RemovingRuns RemovingRun }
+        MovingRings ->
+            if List.isEmpty <| runsToRemove state.board then
+                nextPlayer (State { state | phase = MovingRings })
+            else
+                State { state | phase = RemovingRuns RemovingRun }
 
         RemovingRuns removalPhase ->
             case removalPhase of
@@ -354,7 +323,7 @@ updatePhase move (State state) =
 
                 RemovingRing _ ->
                     if List.isEmpty <| runsToRemove state.board then
-                        nextPlayer (State { state | phase = MovingRings PlacingDisc })
+                        nextPlayer (State { state | phase = MovingRings })
                     else
                         State { state | phase = RemovingRuns RemovingRun }
 
@@ -379,16 +348,6 @@ checkScore (State state) =
 nextPlayer : State -> State
 nextPlayer (State state) =
     State { state | toMove = Player.next state.toMove }
-
-
-droppingRingOrigin : Move -> Coordinate
-droppingRingOrigin move =
-    case move of
-        StartMovingRing origin ->
-            origin
-
-        _ ->
-            Debug.crash ("This should have been a " ++ toString StartMovingRing)
 
 
 removingRunPlayer : Move -> Player
