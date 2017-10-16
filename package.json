@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "watch": "elm live --open src/Main.elm -- --debug",
+    "watch:open": "elm live --open src/Main.elm -- --debug",
+    "watch": "elm live src/Main.elm -- --debug",
     "prebuild": "yarn clean && mkdir dist",
     "build": "elm make src/Main.elm --output dist/index.html",
     "clean": "test -d dist && rm -r dist || echo no cleanup required",
