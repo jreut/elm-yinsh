@@ -107,7 +107,7 @@ messagesView : Game.State -> Html Msg
 messagesView game =
     Html.div
         [ Html.Attributes.style
-            []
+            [ ( "flex-basis", "20%" ) ]
         ]
         [ Html.p [] [ Html.text (Game.message game) ]
         , Html.p [] [ Html.em [] [ Html.text "Click on any highlighted position to move." ] ]

@@ -1,13 +1,13 @@
 module View.Board
     exposing
-        ( view
-        , config
+        ( config
+        , view
         )
 
-import Svg exposing (Svg, svg, g)
-import Svg.Attributes exposing (viewBox, style)
-import Svg.Events exposing (onClick)
 import Html exposing (Html)
+import Svg exposing (Svg, g, svg)
+import Svg.Attributes exposing (style, viewBox)
+import Svg.Events exposing (onClick)
 
 
 type Config datum msg
@@ -32,10 +32,10 @@ view (Config { toSvg, toMsg }) data =
         container =
             svg
                 [ viewBox "-10 -10 20 20"
-                , style "flex-basis: 70%"
+                , style "flex-basis: 60%"
                 ]
 
         makeNode datum =
             g [ onClick (toMsg datum) ] [ toSvg datum ]
     in
-        data |> List.map makeNode |> container
+    data |> List.map makeNode |> container
