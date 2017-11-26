@@ -51,21 +51,21 @@ view { game } =
         boardView =
             BoardView.view config (game |> Game.board |> Board.positions)
     in
-    Html.main_
-        [ style
-            [ ( "backgroundColor", "lightblue" )
-            , ( "display", "flex" )
-            , ( "flex-direction", "row" )
-            , ( "width", "100%" )
-            , ( "width", "100vw" )
-            , ( "height", "100%" )
-            , ( "height", "100vh" )
+        Html.main_
+            [ style
+                [ ( "backgroundColor", "lightblue" )
+                , ( "display", "flex" )
+                , ( "flex-direction", "row" )
+                , ( "width", "100%" )
+                , ( "width", "100vw" )
+                , ( "height", "100%" )
+                , ( "height", "100vh" )
+                ]
             ]
-        ]
-        [ Html.map (always NoOp) header
-        , boardView
-        , messagesView game
-        ]
+            [ Html.map (always NoOp) header
+            , boardView
+            , messagesView game
+            ]
 
 
 toSvg : Game.State -> Board.Position Player Marker -> Svg Msg
@@ -76,7 +76,7 @@ toSvg game position =
                 |> not
                 << List.isEmpty
     in
-    OccupantView.view shouldHighlight position
+        OccupantView.view shouldHighlight position
 
 
 toMsg : Game.State -> Board.Position Player Marker -> Msg
@@ -94,7 +94,6 @@ header =
         ]
         [ Html.h1 [] [ Html.text "Yinsh" ]
         , Html.h2 [] [ Html.text "on the Web!" ]
-        , Html.h3 [] [ Html.text "v0.0.3" ]
         , Html.p []
             [ Html.a [ href "//github.com/jreut/elm-yinsh" ]
                 [ Html.text "source code"
