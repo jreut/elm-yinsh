@@ -8,7 +8,6 @@ module Game.Run
         )
 
 import Set exposing (Set)
-import Dict exposing (Dict)
 import Player exposing (Player)
 import Coordinate.Hexagonal exposing (Coordinate)
 
