@@ -10,6 +10,7 @@ import Svg exposing (Svg)
 import View.Board as BoardView
 import View.Occupant as OccupantView
 import View.Score as ScoreView
+import Coordinate.Hexagonal exposing (Coordinate)
 
 
 main : Program Never Model Msg
@@ -24,15 +25,26 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    { game = Game.init } ! []
+    { game = Game.init
+    , phase = Normal
+    }
+        ! []
 
 
 
 --- MODEL
 
 
+type Phase
+    = Normal
+      -- MovingRing from@(x,y)
+    | MovingRing Coordinate
+
+
 type alias Model =
-    { game : Game.State }
+    { game : Game.State
+    , phase : Phase
+    }
 
 
 
@@ -40,15 +52,15 @@ type alias Model =
 
 
 view : Model -> Html Msg
-view { game } =
+view { game, phase } =
     let
         availableMoves =
             Game.availableMoves game
 
         config =
             BoardView.config
-                { toSvg = toSvg availableMoves
-                , toMsg = toMsg availableMoves
+                { toSvg = toSvg phase availableMoves
+                , toMsg = toMsg phase availableMoves
                 }
 
         boardView =
@@ -71,23 +83,51 @@ view { game } =
             ]
 
 
-toSvg : List Game.Move -> Board.Position Player Marker -> Svg Msg
-toSvg availableMoves position =
+toSvg : Phase -> List Game.Move -> Board.Position Player Marker -> Svg Msg
+toSvg phase availableMoves position =
     let
+        moves =
+            case phase of
+                Normal ->
+                    availableMoves
+                        |> Game.movesForCoordinate position.coordinate
+
+                MovingRing from ->
+                    availableMoves
+                        |> List.filter (Game.matchesMoveRing from position.coordinate)
+
         shouldHighlight =
-            Game.movesForCoordinate position.coordinate availableMoves
-                |> not
-                << List.isEmpty
+            moves |> not << List.isEmpty
     in
         OccupantView.view shouldHighlight position
 
 
-toMsg : List Game.Move -> Board.Position Player Marker -> Msg
-toMsg availableMoves { coordinate } =
-    Game.movesForCoordinate coordinate availableMoves
-        |> List.head
-        |> Maybe.map MakeMove
-        |> Maybe.withDefault NoOp
+toMsg : Phase -> List Game.Move -> Board.Position Player Marker -> Msg
+toMsg phase availableMoves { coordinate } =
+    case phase of
+        Normal ->
+            Game.movesForCoordinate coordinate availableMoves
+                |> List.map
+                    (\move ->
+                        if Game.isMoveRing move then
+                            StartMovingRing coordinate
+                        else
+                            MakeMove move
+                    )
+                |> List.head
+                |> Maybe.withDefault NoOp
+
+        MovingRing from ->
+            availableMoves
+                |> List.filterMap
+                    (\move ->
+                        if Game.matchesMoveRing from coordinate move then
+                            Just <| DropRing coordinate
+                        else
+                            Nothing
+                    )
+                |> List.head
+                |> Maybe.withDefault NoOp
 
 
 header : Html Never
@@ -137,6 +177,9 @@ subscriptions =
 type Msg
     = NoOp
     | MakeMove Game.Move
+      -- StartMovingRing from@(x,y)
+    | StartMovingRing Coordinate
+    | DropRing Coordinate
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -147,3 +190,22 @@ update msg model =
 
         MakeMove move ->
             { model | game = Game.update move model.game } ! []
+
+        StartMovingRing from ->
+            { model | phase = MovingRing from } ! []
+
+        DropRing to ->
+            case model.phase of
+                MovingRing from ->
+                    let
+                        move =
+                            Game.mkMoveRing from to
+                    in
+                        { model
+                            | phase = Normal
+                            , game = Game.update move model.game
+                        }
+                            ! []
+
+                _ ->
+                    Debug.crash "should have been in MovingRing phase"

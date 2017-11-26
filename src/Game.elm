@@ -13,6 +13,9 @@ module Game
         , runOfFive
         , scores
         , update
+        , isMoveRing
+        , matchesMoveRing
+        , mkMoveRing
         )
 
 import Board
@@ -220,6 +223,11 @@ type Move
     | RemoveRun Run Coordinate
 
 
+mkMoveRing : Coordinate -> Coordinate -> Move
+mkMoveRing from to =
+    MoveRing from to
+
+
 movesForCoordinate : Coordinate -> List Move -> List Move
 movesForCoordinate coordinate =
     let
@@ -373,3 +381,23 @@ runOfFive positions =
                                 |> Maybe.map (Set.fromList << List.map .coordinate)
                                 |> Maybe.map (Run.init player)
                         )
+
+
+isMoveRing : Move -> Bool
+isMoveRing move =
+    case move of
+        MoveRing _ _ ->
+            True
+
+        _ ->
+            False
+
+
+matchesMoveRing : Coordinate -> Coordinate -> Move -> Bool
+matchesMoveRing from to move =
+    case move of
+        MoveRing from_ to_ ->
+            (from == from_) && (to == to_)
+
+        _ ->
+            False
