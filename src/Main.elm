@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Board exposing (Board)
 import Game
+import Game.Run as Run exposing (Run)
 import Html exposing (Html)
 import Html.Attributes exposing (href, style)
 import Marker exposing (Marker)
@@ -39,6 +40,7 @@ type Phase
     = Normal
       -- MovingRing from@(x,y)
     | MovingRing Coordinate
+    | RemovingRun Run
 
 
 type alias Model =
@@ -96,6 +98,10 @@ toSvg phase availableMoves position =
                     availableMoves
                         |> List.filter (Game.matchesMoveRing from position.coordinate)
 
+                RemovingRun run ->
+                    availableMoves
+                        |> List.filter (Game.matchesRemoveRun run position.coordinate)
+
         shouldHighlight =
             moves |> not << List.isEmpty
     in
@@ -111,6 +117,8 @@ toMsg phase availableMoves { coordinate } =
                     (\move ->
                         if Game.isMoveRing move then
                             StartMovingRing coordinate
+                        else if Game.isRemoveRun move then
+                            StartRemovingRun (Game.getRunToRemove move)
                         else
                             MakeMove move
                     )
@@ -123,6 +131,18 @@ toMsg phase availableMoves { coordinate } =
                     (\move ->
                         if Game.matchesMoveRing from coordinate move then
                             Just <| DropRing coordinate
+                        else
+                            Nothing
+                    )
+                |> List.head
+                |> Maybe.withDefault NoOp
+
+        RemovingRun run ->
+            availableMoves
+                |> List.filterMap
+                    (\move ->
+                        if Game.matchesRemoveRun run coordinate move then
+                            Just <| ChooseRing coordinate
                         else
                             Nothing
                     )
@@ -180,6 +200,8 @@ type Msg
       -- StartMovingRing from@(x,y)
     | StartMovingRing Coordinate
     | DropRing Coordinate
+    | StartRemovingRun Run
+    | ChooseRing Coordinate
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -209,3 +231,22 @@ update msg model =
 
                 _ ->
                     Debug.crash "should have been in MovingRing phase"
+
+        StartRemovingRun run ->
+            { model | phase = RemovingRun run } ! []
+
+        ChooseRing coordinate ->
+            case model.phase of
+                RemovingRun run ->
+                    let
+                        move =
+                            Game.mkRemoveRun run coordinate
+                    in
+                        { model
+                            | phase = Normal
+                            , game = Game.update move model.game
+                        }
+                            ! []
+
+                _ ->
+                    Debug.crash "should have been in RemovingRun phase"

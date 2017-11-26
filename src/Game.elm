@@ -1,6 +1,13 @@
 module Game
     exposing
         ( Move
+        , mkMoveRing
+        , mkRemoveRun
+        , isMoveRing
+        , isRemoveRun
+        , getRunToRemove
+        , matchesMoveRing
+        , matchesRemoveRun
         , State
         , availableMoves
         , board
@@ -13,9 +20,6 @@ module Game
         , runOfFive
         , scores
         , update
-        , isMoveRing
-        , matchesMoveRing
-        , mkMoveRing
         )
 
 import Board
@@ -228,6 +232,61 @@ mkMoveRing from to =
     MoveRing from to
 
 
+mkRemoveRun : Run -> Coordinate -> Move
+mkRemoveRun =
+    RemoveRun
+
+
+isMoveRing : Move -> Bool
+isMoveRing move =
+    case move of
+        MoveRing _ _ ->
+            True
+
+        _ ->
+            False
+
+
+isRemoveRun : Move -> Bool
+isRemoveRun move =
+    case move of
+        RemoveRun _ _ ->
+            True
+
+        _ ->
+            False
+
+
+getRunToRemove : Move -> Run
+getRunToRemove move =
+    case move of
+        RemoveRun run _ ->
+            run
+
+        _ ->
+            Debug.crash "OOPS"
+
+
+matchesMoveRing : Coordinate -> Coordinate -> Move -> Bool
+matchesMoveRing from to move =
+    case move of
+        MoveRing from_ to_ ->
+            (from == from_) && (to == to_)
+
+        _ ->
+            False
+
+
+matchesRemoveRun : Run -> Coordinate -> Move -> Bool
+matchesRemoveRun run ring move =
+    case move of
+        RemoveRun run_ ring_ ->
+            (ring == ring_) && (Run.equal run run_)
+
+        _ ->
+            False
+
+
 movesForCoordinate : Coordinate -> List Move -> List Move
 movesForCoordinate coordinate =
     let
@@ -381,23 +440,3 @@ runOfFive positions =
                                 |> Maybe.map (Set.fromList << List.map .coordinate)
                                 |> Maybe.map (Run.init player)
                         )
-
-
-isMoveRing : Move -> Bool
-isMoveRing move =
-    case move of
-        MoveRing _ _ ->
-            True
-
-        _ ->
-            False
-
-
-matchesMoveRing : Coordinate -> Coordinate -> Move -> Bool
-matchesMoveRing from to move =
-    case move of
-        MoveRing from_ to_ ->
-            (from == from_) && (to == to_)
-
-        _ ->
-            False
