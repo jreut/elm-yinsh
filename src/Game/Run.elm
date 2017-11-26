@@ -5,6 +5,7 @@ module Game.Run
         , player
         , coordinates
         , unique
+        , equal
         )
 
 import Set exposing (Set)
